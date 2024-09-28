@@ -3,7 +3,6 @@ package examples
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/FloatTech/floatbox/binary"
 	"github.com/HHU-47133/qzone"
 	"os"
 	"strings"
@@ -35,7 +34,7 @@ LOOP:
 		if err != nil {
 			t.Fatal(err)
 		}
-		text := binary.BytesToString(data)
+		text := string(data)
 		fmt.Printf("%#v\n", text)
 		switch {
 		case strings.Contains(text, "二维码已失效"):

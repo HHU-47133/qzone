@@ -21,11 +21,12 @@ func TestGetPostList(t *testing.T) {
 
 	for _, v := range list.Msglist {
 		fmt.Println(v.Name, v.Conlist, v.Tid, v.Pic, v.Cmtnum)
+		for _, com := range v.Commentlist {
+			fmt.Println("  ·", com.Content, com.Name, com.CreateTime, com.Uin)
+		}
 		if err := m.DoLike(v.Tid); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(time.Second)
 	}
 }
-
-// TODO: 添加获取评论测试

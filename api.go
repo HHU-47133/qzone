@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	cRe = regexp.MustCompile(`_Callback\((.*)\)`)
+	cRe = regexp.MustCompile(`(?s)_Callback\((.*)\)`)
 )
 
 const (
@@ -382,9 +382,10 @@ func (m *Manager) FriendListRaw() (*FriendListVo, error) {
 	if err != nil {
 		return nil, err
 	}
-	body := data[len("_Callback(") : len(data)-len(");")-1]
+	//body := data[len("_Callback(") : len(data)-len(");")-1]
+	body := cRe.FindStringSubmatch(string(data))
 	flv := &FriendListVo{}
-	if err = json.Unmarshal(body, flv); err != nil {
+	if err = json.Unmarshal([]byte(body[1]), flv); err != nil {
 		err = errors.New("json unmarshal error: " + err.Error())
 		return nil, err
 	}

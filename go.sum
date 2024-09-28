@@ -1,0 +1,6 @@
+github.com/FloatTech/floatbox v0.0.0-20240505082030-226ec6713e14 h1:8O0Iq9MnKsKowltY9txhOqcJdmGTjxHPQ4gEYzbJc9A=
+github.com/FloatTech/floatbox v0.0.0-20240505082030-226ec6713e14/go.mod h1:OzGLhvmtz1TKIdGaJDd8pQumvD36UqK+dWsiCISmzQQ=
+github.com/wdvxdr1123/ZeroBot v1.7.5-0.20231009162356-57f71b9f5258 h1:Q0dKoj9SHrR8WjjlcX+eyYBjQKqBn/x1pdJJO1IIOxQ=
+github.com/wdvxdr1123/ZeroBot v1.7.5-0.20231009162356-57f71b9f5258/go.mod h1:y29UIOy0RD3P+0meDNIWRhcJF3jtWPN9xP9hgt/AJAU=
+golang.org/x/text v0.14.0 h1:ScX5w1eTa3QqT8oi6+ziP7dTV1S2+ALU0bI+0zXKWiQ=
+golang.org/x/text v0.14.0/go.mod h1:18ZOQIKpY8NJVqYksKHtTdi31H5itFRjB5/qKTNYzSU=

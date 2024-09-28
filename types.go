@@ -36,7 +36,7 @@ type EmotionPublishVo struct {
 	Right        int           `json:"right"`
 	Secret       int           `json:"secret"`
 	Signin       int           `json:"signin"`
-	Smoothpolicy Smoothpolicy1 `json:"smoothpolicy"`
+	Smoothpolicy Smoothpolicy  `json:"smoothpolicy"`
 	Subcode      int           `json:"subcode"`
 	T1Icon       int           `json:"t1_icon"`
 	T1Name       string        `json:"t1_name"`
@@ -57,21 +57,21 @@ type Conlist struct {
 	Type int    `json:"type"`
 }
 
-// Smoothpolicy1 暂定
-type Smoothpolicy1 struct {
-	Smoothpolicy Smoothpolicy
-}
+//// Smoothpolicy1 暂定
+//type Smoothpolicy1 struct {
+//	Smoothpolicy Smoothpolicy
+//}
 
 // Smoothpolicy 暂定
-type Smoothpolicy struct {
-	ComswDisableSosoSearch  int `json:"comsw.disable_soso_search"`
-	L1SwReadFirstCacheOnly  int `json:"l1sw.read_first_cache_only"`
-	L2SwDontGetReplyCmt     int `json:"l2sw.dont_get_reply_cmt"`
-	L2SwMixsvrFrdnumPerTime int `json:"l2sw.mixsvr_frdnum_per_time"`
-	L3SwHideReplyCmt        int `json:"l3sw.hide_reply_cmt"`
-	L4SwReadTdbOnly         int `json:"l4sw.read_tdb_only"`
-	L5SwReadCacheOnly       int `json:"l5sw.read_cache_only"`
-}
+//type Smoothpolicy struct {
+//	ComswDisableSosoSearch  int `json:"comsw.disable_soso_search"`
+//	L1SwReadFirstCacheOnly  int `json:"l1sw.read_first_cache_only"`
+//	L2SwDontGetReplyCmt     int `json:"l2sw.dont_get_reply_cmt"`
+//	L2SwMixsvrFrdnumPerTime int `json:"l2sw.mixsvr_frdnum_per_time"`
+//	L3SwHideReplyCmt        int `json:"l3sw.hide_reply_cmt"`
+//	L4SwReadTdbOnly         int `json:"l4sw.read_tdb_only"`
+//	L5SwReadCacheOnly       int `json:"l5sw.read_cache_only"`
+//}
 
 // UploadImageRequest 上传图片请求体
 type UploadImageRequest struct {
@@ -140,107 +140,107 @@ type MsgListRequest struct {
 }
 
 // MsgListVo 说说列表响应体
-type MsgListVo struct {
-	AuthFlag     int          `json:"auth_flag"`
-	CensorCount  int          `json:"censor_count"`
-	CensorFlag   int          `json:"censor_flag"`
-	CensorTotal  int          `json:"censor_total"`
-	Cginame      int          `json:"cginame"`
-	Code         int          `json:"code"`
-	Logininfo    Logininfo    `json:"logininfo"`
-	Mentioncount int          `json:"mentioncount"`
-	Message      string       `json:"message"`
-	Msglist      []Msglist    `json:"msglist"`
-	Name         string       `json:"name"`
-	Num          int          `json:"num"`
-	Sign         int          `json:"sign"`
-	Smoothpolicy Smoothpolicy `json:"smoothpolicy"`
-	Subcode      int          `json:"subcode"`
-	Timertotal   int          `json:"timertotal"`
-	Total        int          `json:"total"`
-	Usrinfo      Usrinfo      `json:"usrinfo"`
-}
-
-// Logininfo 登录信息
-type Logininfo struct {
-	Name string `json:"name"`
-	Uin  int    `json:"uin"`
-}
-
-// Lbs 位置信息
-type Lbs struct {
-	ID     string `json:"id"`
-	Idname string `json:"idname"`
-	Name   string `json:"name"`
-	PosX   string `json:"pos_x"`
-	PosY   string `json:"pos_y"`
-}
-
-// Pic 图片信息
-type Pic struct {
-	AbsolutePosition int    `json:"absolute_position"`
-	BHeight          int    `json:"b_height"`
-	BWidth           int    `json:"b_width"`
-	Curlikekey       string `json:"curlikekey"`
-	Height           int    `json:"height"`
-	PicID            string `json:"pic_id"`
-	Pictype          int    `json:"pictype"`
-	Richsubtype      int    `json:"richsubtype"`
-	Rtype            int    `json:"rtype"`
-	Smallurl         string `json:"smallurl"`
-	Unilikekey       string `json:"unilikekey"`
-	URL1             string `json:"url1"`
-	URL2             string `json:"url2"`
-	URL3             string `json:"url3"`
-	Who              int    `json:"who"`
-	Width            int    `json:"width"`
-}
-
-// Msglist 单个说说的详细信息
-type Msglist struct {
-	Certified   int       `json:"certified"`
-	Cmtnum      int       `json:"cmtnum"`
-	Conlist     []Conlist `json:"conlist"`
-	Content     string    `json:"content"`
-	CreateTime  string    `json:"createTime"`
-	CreatedTime int       `json:"created_time"`
-	EditMask    int64     `json:"editMask"`
-	Fwdnum      int       `json:"fwdnum"`
-	HasMoreCon  int       `json:"has_more_con"`
-	IsEditable  int       `json:"isEditable"`
-	Issigin     int       `json:"issigin"`
-	Lastmodify  int       `json:"lastmodify"`
-	Lbs         Lbs       `json:"lbs"`
-	Name        string    `json:"name"`
-	PicTemplate string    `json:"pic_template"`
-	Right       int       `json:"right"`
-	RtSum       int       `json:"rt_sum"`
-	Secret      int       `json:"secret"`
-	SourceAppid string    `json:"source_appid"`
-	SourceName  string    `json:"source_name"`
-	SourceURL   string    `json:"source_url"`
-	T1Source    int       `json:"t1_source"`
-	T1Subtype   int       `json:"t1_subtype"`
-	T1Termtype  int       `json:"t1_termtype"`
-	Tid         string    `json:"tid"`
-	UgcRight    int       `json:"ugc_right"`
-	Uin         int       `json:"uin"`
-	Wbid        int       `json:"wbid"`
-	Pic         []Pic     `json:"pic,omitempty"`
-	Pictotal    int       `json:"pictotal,omitempty"`
-}
-
-// Usrinfo 个人信息
-type Usrinfo struct {
-	Concern    int    `json:"concern"`
-	CreateTime string `json:"createTime"`
-	Fans       int    `json:"fans"`
-	Followed   int    `json:"followed"`
-	Msg        string `json:"msg"`
-	Msgnum     int    `json:"msgnum"`
-	Name       string `json:"name"`
-	Uin        int    `json:"uin"`
-}
+//type MsgListVo struct {
+//	AuthFlag     int          `json:"auth_flag"`
+//	CensorCount  int          `json:"censor_count"`
+//	CensorFlag   int          `json:"censor_flag"`
+//	CensorTotal  int          `json:"censor_total"`
+//	Cginame      int          `json:"cginame"`
+//	Code         int          `json:"code"`
+//	Logininfo    Logininfo    `json:"logininfo"`
+//	Mentioncount int          `json:"mentioncount"`
+//	Message      string       `json:"message"`
+//	Msglist      []Msglist    `json:"msglist"`
+//	Name         string       `json:"name"`
+//	Num          int          `json:"num"`
+//	Sign         int          `json:"sign"`
+//	Smoothpolicy Smoothpolicy `json:"smoothpolicy"`
+//	Subcode      int          `json:"subcode"`
+//	Timertotal   int          `json:"timertotal"`
+//	Total        int          `json:"total"`
+//	Usrinfo      Usrinfo      `json:"usrinfo"`
+//}
+//
+//// Logininfo 登录信息
+//type Logininfo struct {
+//	Name string `json:"name"`
+//	Uin  int    `json:"uin"`
+//}
+//
+//// Lbs 位置信息
+//type Lbs struct {
+//	ID     string `json:"id"`
+//	Idname string `json:"idname"`
+//	Name   string `json:"name"`
+//	PosX   string `json:"pos_x"`
+//	PosY   string `json:"pos_y"`
+//}
+//
+//// Pic 图片信息
+//type Pic struct {
+//	AbsolutePosition int    `json:"absolute_position"`
+//	BHeight          int    `json:"b_height"`
+//	BWidth           int    `json:"b_width"`
+//	Curlikekey       string `json:"curlikekey"`
+//	Height           int    `json:"height"`
+//	PicID            string `json:"pic_id"`
+//	Pictype          int    `json:"pictype"`
+//	Richsubtype      int    `json:"richsubtype"`
+//	Rtype            int    `json:"rtype"`
+//	Smallurl         string `json:"smallurl"`
+//	Unilikekey       string `json:"unilikekey"`
+//	URL1             string `json:"url1"`
+//	URL2             string `json:"url2"`
+//	URL3             string `json:"url3"`
+//	Who              int    `json:"who"`
+//	Width            int    `json:"width"`
+//}
+//
+//// Msglist 单个说说的详细信息
+//type Msglist struct {
+//	Certified   int       `json:"certified"`
+//	Cmtnum      int       `json:"cmtnum"`
+//	Conlist     []Conlist `json:"conlist"`
+//	Content     string    `json:"content"`
+//	CreateTime  string    `json:"createTime"`
+//	CreatedTime int       `json:"created_time"`
+//	EditMask    int64     `json:"editMask"`
+//	Fwdnum      int       `json:"fwdnum"`
+//	HasMoreCon  int       `json:"has_more_con"`
+//	IsEditable  int       `json:"isEditable"`
+//	Issigin     int       `json:"issigin"`
+//	Lastmodify  int       `json:"lastmodify"`
+//	Lbs         Lbs       `json:"lbs"`
+//	Name        string    `json:"name"`
+//	PicTemplate string    `json:"pic_template"`
+//	Right       int       `json:"right"`
+//	RtSum       int       `json:"rt_sum"`
+//	Secret      int       `json:"secret"`
+//	SourceAppid string    `json:"source_appid"`
+//	SourceName  string    `json:"source_name"`
+//	SourceURL   string    `json:"source_url"`
+//	T1Source    int       `json:"t1_source"`
+//	T1Subtype   int       `json:"t1_subtype"`
+//	T1Termtype  int       `json:"t1_termtype"`
+//	Tid         string    `json:"tid"`
+//	UgcRight    int       `json:"ugc_right"`
+//	Uin         int       `json:"uin"`
+//	Wbid        int       `json:"wbid"`
+//	Pic         []Pic     `json:"pic,omitempty"`
+//	Pictotal    int       `json:"pictotal,omitempty"`
+//}
+//
+//// Usrinfo 个人信息
+//type Usrinfo struct {
+//	Concern    int    `json:"concern"`
+//	CreateTime string `json:"createTime"`
+//	Fans       int    `json:"fans"`
+//	Followed   int    `json:"followed"`
+//	Msg        string `json:"msg"`
+//	Msgnum     int    `json:"msgnum"`
+//	Name       string `json:"name"`
+//	Uin        int    `json:"uin"`
+//}
 
 // LikeRequest 空间点赞请求体
 type LikeRequest struct {
@@ -269,4 +269,135 @@ type FriendInfoEasy struct {
 	Yellow  int    `json:"yellow"`
 	Online  int    `json:"online"`
 	V6      int    `json:"v6"`
+}
+
+// 以下是新的结构体，用于说说评论获取
+type MsgListVo struct {
+	AuthFlag     int          `json:"auth_flag"`
+	CensorCount  int          `json:"censor_count"`
+	CensorFlag   int          `json:"censor_flag"`
+	CensorTotal  int          `json:"censor_total"`
+	Cginame      int          `json:"cginame"`
+	Code         int          `json:"code"`
+	Logininfo    Logininfo    `json:"logininfo"`
+	Mentioncount int          `json:"mentioncount"`
+	Message      string       `json:"message"`
+	Msglist      []Msglist    `json:"msglist"`
+	Name         string       `json:"name"`
+	Num          int          `json:"num"`
+	Sign         int          `json:"sign"`
+	Smoothpolicy Smoothpolicy `json:"smoothpolicy"`
+	Subcode      int          `json:"subcode"`
+	Timertotal   int          `json:"timertotal"`
+	Total        int          `json:"total"`
+	Usrinfo      Usrinfo      `json:"usrinfo"`
+}
+type Logininfo struct {
+	Name string `json:"name"`
+	Uin  int    `json:"uin"`
+}
+type StoredExtendInfo struct {
+	K string `json:"k"`
+	V string `json:"v"`
+}
+type Commentlist struct {
+	IsPasswordLuckyMoneyCmtRight string             `json:"IsPasswordLuckyMoneyCmtRight"`
+	Abledel                      int                `json:"abledel"`
+	Content                      string             `json:"content"`
+	CreateTime                   string             `json:"createTime"`
+	CreateTime2                  string             `json:"createTime2"`
+	CreateTime0                  int                `json:"create_time"`
+	Name                         string             `json:"name"`
+	Private                      int                `json:"private"`
+	ReplyNum                     int                `json:"reply_num"`
+	SourceName                   string             `json:"source_name"`
+	SourceURL                    string             `json:"source_url"`
+	StoredExtendInfo             []StoredExtendInfo `json:"stored_extend_info"`
+	T2Source                     int                `json:"t2_source"`
+	T2Subtype                    int                `json:"t2_subtype"`
+	T2Termtype                   int                `json:"t2_termtype"`
+	Tid                          int                `json:"tid"`
+	Uin                          int                `json:"uin"`
+}
+
+//	type Conlist struct {
+//		Con  string `json:"con"`
+//		Type int    `json:"type"`
+//	}
+type Lbs struct {
+	ID     string `json:"id"`
+	Idname string `json:"idname"`
+	Name   string `json:"name"`
+	PosX   string `json:"pos_x"`
+	PosY   string `json:"pos_y"`
+}
+type Pic struct {
+	AbsolutePosition int    `json:"absolute_position"`
+	BHeight          int    `json:"b_height"`
+	BWidth           int    `json:"b_width"`
+	Curlikekey       string `json:"curlikekey"`
+	Height           int    `json:"height"`
+	PicID            string `json:"pic_id"`
+	Pictype          int    `json:"pictype"`
+	Richsubtype      int    `json:"richsubtype"`
+	Rtype            int    `json:"rtype"`
+	Smallurl         string `json:"smallurl"`
+	Unilikekey       string `json:"unilikekey"`
+	URL1             string `json:"url1"`
+	URL2             string `json:"url2"`
+	URL3             string `json:"url3"`
+	Who              int    `json:"who"`
+	Width            int    `json:"width"`
+}
+type Msglist struct {
+	Certified   int           `json:"certified"`
+	Cmtnum      int           `json:"cmtnum"`
+	Commentlist []Commentlist `json:"commentlist"`
+	Conlist     []Conlist     `json:"conlist"`
+	Content     string        `json:"content"`
+	CreateTime  string        `json:"createTime"`
+	CreatedTime int           `json:"created_time"`
+	EditMask    int64         `json:"editMask"`
+	Fwdnum      int           `json:"fwdnum"`
+	HasMoreCon  int           `json:"has_more_con"`
+	IsEditable  int           `json:"isEditable"`
+	Issigin     int           `json:"issigin"`
+	Lastmodify  int           `json:"lastmodify"`
+	Lbs         Lbs           `json:"lbs"`
+	Name        string        `json:"name"`
+	Pic         []Pic         `json:"pic"`
+	PicTemplate string        `json:"pic_template"`
+	Pictotal    int           `json:"pictotal"`
+	Right       int           `json:"right"`
+	RtSum       int           `json:"rt_sum"`
+	Secret      int           `json:"secret"`
+	SourceAppid string        `json:"source_appid"`
+	SourceName  string        `json:"source_name"`
+	SourceURL   string        `json:"source_url"`
+	T1Source    int           `json:"t1_source"`
+	T1Subtype   int           `json:"t1_subtype"`
+	T1Termtype  int           `json:"t1_termtype"`
+	Tid         string        `json:"tid"`
+	UgcRight    int           `json:"ugc_right"`
+	Uin         int           `json:"uin"`
+	Wbid        int           `json:"wbid"`
+}
+type Smoothpolicy struct {
+	ComswDisableSosoSearch  int `json:"comsw.disable_soso_search"`
+	L1SwReadFirstCacheOnly  int `json:"l1sw.read_first_cache_only"`
+	L2SwDontGetReplyCmt     int `json:"l2sw.dont_get_reply_cmt"`
+	L2SwMixsvrFrdnumPerTime int `json:"l2sw.mixsvr_frdnum_per_time"`
+	L3SwHideReplyCmt        int `json:"l3sw.hide_reply_cmt"`
+	L4SwReadTdbOnly         int `json:"l4sw.read_tdb_only"`
+	L5SwReadCacheOnly       int `json:"l5sw.read_cache_only"`
+}
+type Usrinfo struct {
+	Concern    int    `json:"concern"`
+	CreateTime string `json:"createTime"`
+	Fans       int    `json:"fans"`
+	Followed   int    `json:"followed"`
+	Msg        string `json:"msg"`
+	Msgnum     int    `json:"msgnum"`
+	Name       string `json:"name"`
+	Uin        int    `json:"uin"`
 }

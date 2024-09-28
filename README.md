@@ -53,8 +53,10 @@ result, err := m.EmotionPublish("content", []string{picBase64})
 // replynum：评论数量
 result, err := m.EmotionMsglist("20", "100")
 ```
-
-
+## 单个说说URL
+```go
+"https://user.qzone.qq.com/"+QQ号+"/mood/"+说说tid
+```
 ## model 
 
 - 请求响应结构，具体参考 `types.go` 文件

@@ -30,6 +30,7 @@ const (
 	ptqrshowURL       = "https://ssl.ptlogin2.qq.com/ptqrshow?appid=549000912&e=2&l=M&s=3&d=72&v=4&t=0.31232733520361844&daid=5&pt_3rd_aid=0"
 	ptqrloginURL      = "https://xui.ptlogin2.qq.com/ssl/ptqrlogin?u1=https://qzs.qq.com/qzone/v5/loginsucc.html?para=izone&ptqrtoken=%v&ptredirect=0&h=1&t=1&g=1&from_ui=1&ptlang=2052&action=0-0-1656992258324&js_ver=22070111&js_type=1&login_sig=&pt_uistyle=40&aid=549000912&daid=5&has_onekey=1&&o1vId=1e61428d61cb5015701ad73d5fb59f73"
 	checkSigURL       = "https://ptlogin2.qzone.qq.com/check_sig?pttype=1&uin=%v&service=ptqrlogin&nodirect=1&ptsigx=%v&s_url=https://qzs.qq.com/qzone/v5/loginsucc.html?para=izone&f_url=&ptlang=2052&ptredirect=100&aid=549000912&daid=5&j_later=0&low_login_hour=0&regmaster=0&pt_login_type=3&pt_aid=0&pt_aaid=16&pt_light=0&pt_3rd_aid=0"
+	friendURL         = "https://h5.qzone.qq.com/proxy/domain/r.qzone.qq.com/cgi-bin/tfriend/friend_show_qqfriends.cgi?" + params
 )
 
 // Ptqrshow 获得登录二维码
@@ -316,11 +317,26 @@ func (m *Manager) EmotionMsglistRaw(mlr MsgListRequest) (mlv MsgListVo, err erro
 	return
 }
 
-// LikeRaw 空间点赞(貌似只能给自己点赞,预留)
+// DoLike 空间点赞
+func (m *Manager) DoLike(tid string) error {
+	lr := LikeRequest{
+		Qzreferrer: userQzoneURL + m.QQ,
+		Opuin:      m.QQ,
+		Unikey:     userQzoneURL + m.QQ + "/mood/" + tid,
+		From:       "1",
+		Fid:        tid,
+		Typeid:     "0",
+		Appid:      "311",
+	}
+	lr.Curkey = lr.Unikey
+	return m.LikeRaw(lr)
+}
+
+// LikeRaw 空间点赞
 func (m *Manager) LikeRaw(lr LikeRequest) (err error) {
 	client := &http.Client{}
 	payload := strings.NewReader(structToStr(lr))
-	request, err := http.NewRequest("POST", likeURL, payload)
+	request, err := http.NewRequest("POST", fmt.Sprintf(likeURL, m.Gtk2), payload)
 	if err != nil {
 		return
 	}
@@ -334,12 +350,47 @@ func (m *Manager) LikeRaw(lr LikeRequest) (err error) {
 		return
 	}
 	defer response.Body.Close()
-	data, err := io.ReadAll(request.Body)
+	data, err := io.ReadAll(response.Body)
 	if err != nil {
 		return
 	}
-	fmt.Printf("data:%s\n", data)
+	if !strings.Contains(string(data), "\"msg\":\"succ\"") {
+		return errors.New(fmt.Sprintf("do like for fid:[%s] error", lr.Fid))
+	}
 	return
+}
+
+func (m *Manager) FriendList() (*FriendListVo, error) {
+	return m.FriendListRaw()
+}
+
+func (m *Manager) FriendListRaw() (*FriendListVo, error) {
+	client := &http.Client{}
+	request, err := http.NewRequest("GET", fmt.Sprintf(friendURL, m.Gtk2)+"&uin="+m.QQ, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Add("referer", userQzoneURL)
+	request.Header.Add("origin", userQzoneURL)
+	request.Header.Add("cookie", m.Cookie)
+	request.Header.Add("user-agent", ua)
+	request.Header.Add("content-type", contentType)
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+	data, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+	body := data[len("_Callback(") : len(data)-len(");")-1]
+	flv := &FriendListVo{}
+	if err = json.Unmarshal(body, flv); err != nil {
+		err = errors.New("json unmarshal error: " + err.Error())
+		return nil, err
+	}
+	return flv, nil
 }
 
 func getPicBoAndRichval(data UploadImageVo) (picBo, richval string, err error) {

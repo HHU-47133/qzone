@@ -3,13 +3,20 @@
 > 提供qq空间基础功能接口
 
 
+- 导入项目
+
+```go
+go get -u github.com/HHU-47133/qzone
+```
+
+
 ## 功能接口
 
 ### 登录（Login）
 
 ```go
 // 1. 获取二维码信息（data），取出cookie重要参数（qrsig、ptqrtoken）
-data, qrsig, ptqrtoken, err := Ptqrshow()
+data, qrsig, ptqrtoken, err = Ptqrshow()
 // 2. 保存二维码
 err = os.WriteFile("ptqrcode.png", data, 0666)
 // 3. 查询登录回调，检测登录状态
@@ -29,11 +36,11 @@ m := NewManager(ptqrloginCookie + redirectCookie)
 
 ```go
 // 1. 读取本地图片
-srcByte, err := os.ReadFile(path)
+srcByte, err = os.ReadFile(path)
 // 2. base64编码
-picBase64 := base64.StdEncoding.EncodeToString(srcByte)
+picBase64 = base64.StdEncoding.EncodeToString(srcByte)
 // 3. 上传图片 
-result, err := m.UploadImage(picBase64)
+result, err = m.UploadImage(picBase64)
 ```
 
 ### 发布说说（Publish Post）
@@ -42,7 +49,7 @@ result, err := m.UploadImage(picBase64)
 // EmotionPublish(content string, base64imgList []string)
 // content：说说内容
 // base64imgList：base64编码图片列表
-result, err := m.EmotionPublish("content", []string{picBase64})
+result, err = m.EmotionPublish("content", []string{picBase64})
 ```
 
 ## 获取说说列表（Get Post list）
@@ -51,7 +58,7 @@ result, err := m.EmotionPublish("content", []string{picBase64})
 // EmotionMsglist(num string, replynum string)
 // num：说说数量
 // replynum：评论数量
-result, err := m.EmotionMsglist("20", "100")
+result, err = m.EmotionMsglist("20", "100")
 ```
 
 

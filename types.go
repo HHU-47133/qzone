@@ -245,11 +245,28 @@ type Usrinfo struct {
 // LikeRequest 空间点赞请求体
 type LikeRequest struct {
 	Curkey     string `json:"curkey"`
-	Face       string `json:"face"`
-	From       string `json:"from"`
-	Fupdate    string `json:"fupdate"`
 	Opuin      string `json:"opuin"`
 	Qzreferrer string `json:"qzreferrer"`
 	Unikey     string `json:"unikey"`
-	Format     string `json:"format"`
+	Fid        string `json:"fid"`
+	From       string `json:"from"`
+	Typeid     string `json:"typeid"`
+	Appid      string `json:"appid"`
+}
+
+// FriendListVo 好友列表响应体
+type FriendListVo struct {
+	FriendInfosEasy []*FriendInfoEasy `json:"items"`
+}
+
+// FriendInfoEasy 好友简略信息
+type FriendInfoEasy struct {
+	Uin     uint32 `json:"uin"`
+	Groupid int    `json:"groupid"`
+	Name    string `json:"name"`
+	Remark  string `json:"remark"`
+	Image   string `json:"img"`
+	Yellow  int    `json:"yellow"`
+	Online  int    `json:"online"`
+	V6      int    `json:"v6"`
 }

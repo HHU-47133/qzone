@@ -9,8 +9,6 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
-
-	"github.com/FloatTech/floatbox/binary"
 )
 
 var (
@@ -221,12 +219,12 @@ func (m *Manager) UploadImage(base64img string) (result UploadImageVo, err error
 	}
 	defer response.Body.Close()
 	data, err := io.ReadAll(response.Body)
-	r := cRe.FindStringSubmatch(binary.BytesToString(data))
+	r := cRe.FindStringSubmatch(string(data))
 	if len(r) < 2 {
 		err = errors.New("上传失败")
 		return
 	}
-	err = json.Unmarshal(binary.StringToBytes(r[1]), &result)
+	err = json.Unmarshal([]byte(r[1]), &result)
 	return
 }
 

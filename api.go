@@ -358,6 +358,7 @@ func (m *Manager) LikeRaw(lr LikeRequest) (err error) {
 	return
 }
 
+// FriendList 获取亲密度前200的好友
 func (m *Manager) FriendList() (*FriendListVo, error) {
 	return m.FriendListRaw()
 }
@@ -392,6 +393,7 @@ func (m *Manager) FriendListRaw() (*FriendListVo, error) {
 	return flv, nil
 }
 
+// 上传图片资源
 func getPicBoAndRichval(data UploadImageVo) (picBo, richval string, err error) {
 	var flag bool
 	if data.Ret != 0 {

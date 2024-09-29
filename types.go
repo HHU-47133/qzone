@@ -57,22 +57,6 @@ type Conlist struct {
 	Type int    `json:"type"`
 }
 
-//// Smoothpolicy1 暂定
-//type Smoothpolicy1 struct {
-//	Smoothpolicy Smoothpolicy
-//}
-
-// Smoothpolicy 暂定
-//type Smoothpolicy struct {
-//	ComswDisableSosoSearch  int `json:"comsw.disable_soso_search"`
-//	L1SwReadFirstCacheOnly  int `json:"l1sw.read_first_cache_only"`
-//	L2SwDontGetReplyCmt     int `json:"l2sw.dont_get_reply_cmt"`
-//	L2SwMixsvrFrdnumPerTime int `json:"l2sw.mixsvr_frdnum_per_time"`
-//	L3SwHideReplyCmt        int `json:"l3sw.hide_reply_cmt"`
-//	L4SwReadTdbOnly         int `json:"l4sw.read_tdb_only"`
-//	L5SwReadCacheOnly       int `json:"l5sw.read_cache_only"`
-//}
-
 // UploadImageRequest 上传图片请求体
 type UploadImageRequest struct {
 	Albumtype        string `json:"albumtype"`
@@ -271,7 +255,7 @@ type FriendInfoEasy struct {
 	V6      int    `json:"v6"`
 }
 
-// 以下是新的结构体，用于说说评论获取
+// MsgListVo 新的结构体，用于说说评论获取
 type MsgListVo struct {
 	AuthFlag     int          `json:"auth_flag"`
 	CensorCount  int          `json:"censor_count"`

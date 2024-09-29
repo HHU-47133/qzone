@@ -60,6 +60,12 @@ result, err = m.EmotionPublish("content", []string{picBase64})
 // replynum：评论数量
 result, err = m.EmotionMsglist("20", "100")
 ```
+## 获取说说所有一级评论
+```go
+// GetShuoShuoComments(tid string)
+// tid：说说ID
+comments, err := m.GetShuoShuoComments("4844244d9011f866f3d90500")
+```
 ## 单个说说URL
 ```go
 "https://user.qzone.qq.com/"+QQ号+"/mood/"+说说tid

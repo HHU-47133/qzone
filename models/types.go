@@ -1,4 +1,6 @@
-package qzone
+package models
+
+import "time"
 
 // EmotionPublishRequest 发说说请求体
 type EmotionPublishRequest struct {
@@ -86,27 +88,27 @@ type UploadImageRequest struct {
 	Zzpaneluin       string `json:"zzpaneluin"`
 }
 
-// UploadImageVo 上传图片响应体
-type UploadImageVo struct {
-	Data struct {
-		Pre          string `json:"pre"`
-		URL          string `json:"url"`
-		Lloc         string `json:"lloc"`
-		Sloc         string `json:"sloc"`
-		Type         int    `json:"type"`
-		Width        int    `json:"width"`
-		Height       int    `json:"height"`
-		Albumid      string `json:"albumid"`
-		Totalpic     int    `json:"totalpic"`
-		Limitpic     int    `json:"limitpic"`
-		OriginURL    string `json:"origin_url"`
-		OriginUUID   string `json:"origin_uuid"`
-		OriginWidth  int    `json:"origin_width"`
-		OriginHeight int    `json:"origin_height"`
-		Contentlen   int    `json:"contentlen"`
-	} `json:"data"`
-	Ret int `json:"ret"`
-}
+//// UploadImageVo 上传图片响应体
+//type UploadImageVo struct {
+//	Data struct {
+//		Pre          string `json:"pre"`
+//		URL          string `json:"url"`
+//		Lloc         string `json:"lloc"`
+//		Sloc         string `json:"sloc"`
+//		Type         int    `json:"type"`
+//		Width        int    `json:"width"`
+//		Height       int    `json:"height"`
+//		Albumid      string `json:"albumid"`
+//		Totalpic     int    `json:"totalpic"`
+//		Limitpic     int    `json:"limitpic"`
+//		OriginURL    string `json:"origin_url"`
+//		OriginUUID   string `json:"origin_uuid"`
+//		OriginWidth  int    `json:"origin_width"`
+//		OriginHeight int    `json:"origin_height"`
+//		Contentlen   int    `json:"contentlen"`
+//	} `json:"data"`
+//	Ret int `json:"ret"`
+//}
 
 // MsgListRequest 说说列表请求体
 type MsgListRequest struct {
@@ -238,21 +240,67 @@ type LikeRequest struct {
 	Appid      string `json:"appid"`
 }
 
-// FriendListVo 好友列表响应体
-type FriendListVo struct {
-	FriendInfosEasy []*FriendInfoEasy `json:"items"`
-}
+//// FriendListVo 好友列表响应体
+//type FriendListVo struct {
+//	FriendInfosEasy []*FriendInfoEasy `json:"items"`
+//}
 
-// FriendInfoEasy 好友简略信息
-type FriendInfoEasy struct {
-	Uin     uint32 `json:"uin"`
-	Groupid int    `json:"groupid"`
-	Name    string `json:"name"`
-	Remark  string `json:"remark"`
-	Image   string `json:"img"`
-	Yellow  int    `json:"yellow"`
-	Online  int    `json:"online"`
-	V6      int    `json:"v6"`
+//// FriendInfoEasy 好友简略信息
+//type FriendInfoEasy struct {
+//	Uin     uint32 `json:"uin"`
+//	Groupid int    `json:"groupid"`
+//	Name    string `json:"name"`
+//	Remark  string `json:"remark"`
+//	Image   string `json:"img"`
+//	Yellow  int    `json:"yellow"`
+//	Online  int    `json:"online"`
+//	V6      int    `json:"v6"`
+//}
+
+// FriendInfoDetail 好友详细信息
+type FriendInfoDetail struct {
+	Uin                  uint32        `json:"uin"`
+	IsFamous             bool          `json:"is_famous"`
+	FamousCustomHomepage bool          `json:"famous_custom_homepage"`
+	Nickname             string        `json:"nickname"`
+	Emoji                []interface{} `json:"emoji"`
+	Spacename            string        `json:"spacename"`
+	Desc                 string        `json:"desc"`
+	Signature            string        `json:"signature"`
+	Avatar               string        `json:"avatar"`
+	SexType              int           `json:"sex_type"`
+	Sex                  int           `json:"sex"`
+	AnimalsignType       int           `json:"animalsign_type"`
+	ConstellationType    int           `json:"constellation_type"`
+	Constellation        int           `json:"constellation"`
+	AgeType              int           `json:"age_type"`
+	Age                  int           `json:"age"`
+	Islunar              int           `json:"islunar"`
+	BirthdayType         int           `json:"birthday_type"`
+	Birthyear            int           `json:"birthyear"`
+	Birthday             string        `json:"birthday"`
+	Bloodtype            int           `json:"bloodtype"`
+	AddressType          int           `json:"address_type"`
+	Country              string        `json:"country"`
+	Province             string        `json:"province"`
+	City                 string        `json:"city"`
+	HomeType             int           `json:"home_type"`
+	Hco                  string        `json:"hco"`
+	Hp                   string        `json:"hp"`
+	Hc                   string        `json:"hc"`
+	Marriage             int           `json:"marriage"`
+	Career               string        `json:"career"`
+	Company              string        `json:"company"`
+	Cco                  string        `json:"cco"`
+	Cp                   string        `json:"cp"`
+	Cc                   string        `json:"cc"`
+	Cb                   string        `json:"cb"`
+	Mailname             string        `json:"mailname"`
+	Mailcellphone        string        `json:"mailcellphone"`
+	Mailaddr             string        `json:"mailaddr"`
+	Qzworkexp            []interface{} `json:"qzworkexp"`
+	Qzeduexp             []interface{} `json:"qzeduexp"`
+	Ptimestamp           int           `json:"ptimestamp"`
 }
 
 // MsgListVo 新的结构体，用于说说评论获取
@@ -384,4 +432,67 @@ type Usrinfo struct {
 	Msgnum     int    `json:"msgnum"`
 	Name       string `json:"name"`
 	Uin        int    `json:"uin"`
+}
+
+// 暂时没用到
+type CommentRaw struct {
+	IsPasswordLuckyMoneyCmtRight string    `json:"IsPasswordLuckyMoneyCmtRight"`
+	Abledel                      int       `json:"abledel"`
+	Content                      string    `json:"content"` //评论内容，为空则为图片评论，Pic
+	CreateTime                   string    `json:"createTime"`
+	CreateTime2                  string    `json:"createTime2"`
+	CreateTime0                  time.Time `json:"create_time"` //发送时间戳
+	List3                        []struct {
+		Abledel     int    `json:"abledel"`
+		Content     string `json:"content"`
+		CreateTime  string `json:"createTime"`
+		CreateTime2 string `json:"createTime2"`
+		CreateTime0 int    `json:"create_time"`
+		Name        string `json:"name"`
+		Owner       struct {
+			Name string `json:"name"`
+			Uin  int    `json:"uin"`
+		} `json:"owner"`
+		SourceName string `json:"source_name"`
+		SourceURL  string `json:"source_url"`
+		T3Source   int    `json:"t3_source"`
+		Tid        int    `json:"tid"`
+		Uin        int    `json:"uin"`
+	} `json:"list_3"` //二级评论
+	Name  string `json:"name"`
+	Owner struct {
+		Name string `json:"name"` //评论发送人的昵称
+		Uin  int64  `json:"uin"`  //评论发送人的QQ
+	} `json:"owner"`
+	Pic []struct {
+		BHeight  int    `json:"b_height"`
+		BURL     string `json:"b_url"`
+		BWidth   int    `json:"b_width"`
+		HdHeight int    `json:"hd_height"`
+		HdURL    string `json:"hd_url"`
+		HdWidth  int    `json:"hd_width"`
+		OURL     string `json:"o_url"`
+		SHeight  int    `json:"s_height"`
+		SURL     string `json:"s_url"`
+		SWidth   int    `json:"s_width"`
+		Who      int    `json:"who"`
+	} `json:"pic"` //图片评论细节信息，一般不使用
+	Pictotal int `json:"pictotal"` //图片总数
+	Private  int `json:"private"`
+	ReplyNum int `json:"replyNum"` //二级评论数
+	RichInfo []struct {
+		Burl string `json:"burl"` //评论图片链接地址
+		Type int    `json:"type"`
+		Who  int    `json:"who"`
+	} `json:"rich_info"` //评论图片
+	SourceName string      `json:"source_name"`
+	SourceURL  string      `json:"source_url"`
+	T2Source   int         `json:"t2_source"`
+	T2Subtype  int         `json:"t2_subtype"`
+	T2Termtype int         `json:"t2_termtype"`
+	T2WcNick   interface{} `json:"t2_wc_nick"`
+	T3Subtype  int         `json:"t3_subtype"`
+	T3Termtype int         `json:"t3_termtype"`
+	Tid        int         `json:"tid"`
+	Uin        int         `json:"uin"`
 }

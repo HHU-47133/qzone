@@ -4,180 +4,228 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
-	"net/url"
+	"github.com/HHU-47133/qzone/models"
+	"github.com/tidwall/gjson" // TODO: 疑问？需要处理 body 中的 \n
+	"math"
 	"regexp"
+	"strconv"
 	"strings"
+	"time"
 )
 
 var (
+	// cReLike 点赞响应正则，frameElement.callback();
+	cReLike = regexp.MustCompile(`(?s)frameElement.callback\((.*)\)`)
+	// cRe 正则，_Callback();
 	cRe = regexp.MustCompile(`(?s)_Callback\((.*)\)`)
 )
 
-const (
-	userQzoneURL      = "https://user.qzone.qq.com"
-	ua                = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36"
-	contentType       = "application/x-www-form-urlencoded"
-	params            = "g_tk=%v"
-	inpcqqURL         = "https://h5.qzone.qq.com/feeds/inpcqq?uin=%v&qqver=5749&timestamp=%v"
-	emotionPublishURL = userQzoneURL + "/proxy/domain/taotao.qzone.qq.com/cgi-bin/emotion_cgi_publish_v6?" + params
-	uploadImageURL    = "https://up.qzone.qq.com/cgi-bin/upload/cgi_upload_image?" + params
-	msglistURL        = userQzoneURL + "/proxy/domain/taotao.qq.com/cgi-bin/emotion_cgi_msglist_v6"
-	likeURL           = userQzoneURL + "/proxy/domain/w.qzone.qq.com/cgi-bin/likes/internal_dolike_app?" + params
-	ptqrshowURL       = "https://ssl.ptlogin2.qq.com/ptqrshow?appid=549000912&e=2&l=M&s=3&d=72&v=4&t=0.31232733520361844&daid=5&pt_3rd_aid=0"
-	ptqrloginURL      = "https://xui.ptlogin2.qq.com/ssl/ptqrlogin?u1=https://qzs.qq.com/qzone/v5/loginsucc.html?para=izone&ptqrtoken=%v&ptredirect=0&h=1&t=1&g=1&from_ui=1&ptlang=2052&action=0-0-1656992258324&js_ver=22070111&js_type=1&login_sig=&pt_uistyle=40&aid=549000912&daid=5&has_onekey=1&&o1vId=1e61428d61cb5015701ad73d5fb59f73"
-	checkSigURL       = "https://ptlogin2.qzone.qq.com/check_sig?pttype=1&uin=%v&service=ptqrlogin&nodirect=1&ptsigx=%v&s_url=https://qzs.qq.com/qzone/v5/loginsucc.html?para=izone&f_url=&ptlang=2052&ptredirect=100&aid=549000912&daid=5&j_later=0&low_login_hour=0&regmaster=0&pt_login_type=3&pt_aid=0&pt_aaid=16&pt_light=0&pt_3rd_aid=0"
-	friendURL         = "https://h5.qzone.qq.com/proxy/domain/r.qzone.qq.com/cgi-bin/tfriend/friend_show_qqfriends.cgi?" + params
-)
+// PublishShuoShuo 发布说说，content文本内容，base64imgList图片数组
+func (m *Manager) PublishShuoShuo(content string, base64imgList []string) (*models.ShuoShuoPublishResp, error) {
+	var (
+		uir         *models.UploadImageResp
+		err         error
+		picBo       string
+		richval     string
+		richvalList = make([]string, 0, 9)
+		picBoList   = make([]string, 0, 9)
+	)
 
-// Ptqrshow 获得登录二维码
-func Ptqrshow() (data []byte, qrsig string, ptqrtoken string, err error) {
-	client := &http.Client{
-		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	ptqrshowReq, err := http.NewRequest("GET", ptqrshowURL, nil)
-	if err != nil {
-		return
-	}
-	ptqrshowResp, err := client.Do(ptqrshowReq)
-	if err != nil {
-		return
-	}
-	defer ptqrshowResp.Body.Close()
-	for _, v := range ptqrshowResp.Cookies() {
-		if v.Name == "qrsig" {
-			qrsig = v.Value
-			break
+	for _, base64img := range base64imgList {
+		uir, err = m.UploadImage(base64img)
+		if err != nil {
+			return nil, err
 		}
-	}
-	if qrsig == "" {
-		return
-	}
-	ptqrtoken = genderGTK(qrsig, 0)
-	data, err = io.ReadAll(ptqrshowResp.Body)
-	return
-}
-
-// Ptqrlogin 登录回调
-func Ptqrlogin(qrsig string, qrtoken string) (data []byte, cookie string, err error) {
-	client := &http.Client{
-		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	ptqrloginReq, err := http.NewRequest("GET", fmt.Sprintf(ptqrloginURL, qrtoken), nil)
-	if err != nil {
-		return
-	}
-	ptqrloginReq.Header.Add("cookie", "qrsig="+qrsig)
-	ptqrloginResp, err := client.Do(ptqrloginReq)
-	if err != nil {
-		return
-	}
-	defer ptqrloginResp.Body.Close()
-	for _, v := range ptqrloginReq.Cookies() {
-		if v.Value != "" {
-			cookie += v.Name + "=" + v.Value + ";"
+		picBo, richval, err = getPicBoAndRichval(uir)
+		if err != nil {
+			return nil, err
 		}
+		richvalList = append(richvalList, richval)
+		picBoList = append(picBoList, picBo)
 	}
-	data, err = io.ReadAll(ptqrloginResp.Body)
-	return
+
+	epr := models.EmotionPublishRequest{
+		SynTweetVerson: "1",
+		Paramstr:       "1",
+		Who:            "1",
+		Con:            content,
+		Feedversion:    "1",
+		Ver:            "1",
+		UgcRight:       "1",
+		ToSign:         "0",
+		Hostuin:        m.QQ,
+		CodeVersion:    "1",
+		Format:         "json",
+		Qzreferrer:     userQzoneURL + "/" + m.QQ,
+	}
+	if len(base64imgList) > 0 {
+		epr.Richtype = "1"
+		epr.Richval = strings.Join(richvalList, "\t")
+		epr.Subrichtype = "1"
+		epr.PicBo = strings.Join(picBoList, ",")
+	}
+	return m.publishShuoShuo(epr)
 }
 
-// LoginRedirect 登录成功回调
-func LoginRedirect(redirectURL string) (cookie string, err error) {
-	client := &http.Client{
-		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	u, err := url.Parse(redirectURL)
-	if err != nil {
-		return
-	}
-	values, err := url.ParseQuery(u.RawQuery)
-	if err != nil {
-		return
-	}
-	redirectReq, err := http.NewRequest("GET", fmt.Sprintf(checkSigURL, values["uin"][0], values["ptsigx"][0]), nil)
-	if err != nil {
-		return
-	}
-	redirectResp, err := client.Do(redirectReq)
-	if err != nil {
-		return
-	}
-	defer redirectResp.Body.Close()
-	for _, v := range redirectResp.Cookies() {
-		if v.Value != "" {
-			cookie += v.Name + "=" + v.Value + ";"
-		}
-	}
-	return
-}
-
-// Manager qq空间信息管理
-type Manager struct {
-	Cookie string
-	QQ     string
-	Gtk    string
-	Gtk2   string
-	PSkey  string
-	Skey   string
-	Uin    string
-}
-
-// NewManager 初始化信息
-func NewManager(cookie string) (m Manager) {
-	cookie = strings.ReplaceAll(cookie, " ", "")
-	for _, v := range strings.Split(cookie, ";") {
-		name, val, f := strings.Cut(v, "=")
-		if f {
-			switch name {
-			case "uin":
-				m.Uin = val
-			case "skey":
-				m.Skey = val
-			case "p_skey":
-				m.PSkey = val
-			}
-		}
-	}
-	m.Gtk = genderGTK(m.Skey, 5381)
-	m.Gtk2 = genderGTK(m.PSkey, 5381)
-	m.QQ = strings.TrimPrefix(m.Uin, "o")
-	m.Cookie = cookie
-	return
-}
-
-// EmotionPublishRaw 发送说说
-func (m *Manager) EmotionPublishRaw(epr EmotionPublishRequest) (result EmotionPublishVo, err error) {
-	client := &http.Client{}
+// publishShuoShuo 发送说说
+func (m *Manager) publishShuoShuo(epr models.EmotionPublishRequest) (*models.ShuoShuoPublishResp, error) {
+	url := fmt.Sprintf(emotionPublishURL, m.Gtk2)
 	payload := strings.NewReader(structToStr(epr))
-	request, err := http.NewRequest("POST", fmt.Sprintf(emotionPublishURL, m.Gtk2), payload)
+	data, err := DialRequest(NewRequest(WithMethod("POST"), WithUrl(url), WithBody(payload),
+		WithHeader(map[string]string{
+			"referer": userQzoneURL,
+			"origin":  userQzoneURL,
+			"cookie":  m.Cookie,
+		})))
 	if err != nil {
-		return
+		return nil, err
 	}
-	request.Header.Add("referer", userQzoneURL)
-	request.Header.Add("origin", userQzoneURL)
-	request.Header.Add("cookie", m.Cookie)
-	request.Header.Add("user-agent", ua)
-	request.Header.Add("content-type", contentType)
-	response, err := client.Do(request)
+
+	jsonStr := string(data)
+	ssp := &models.ShuoShuoPublishResp{
+		Code: gjson.Get(jsonStr, "code").Int(),
+		Tid:  gjson.Get(jsonStr, "tid").String(),
+		Now:  gjson.Get(jsonStr, "now").Int(),
+		//Feedinfo: gjson.Get(jsonStr, "feedinfo").String(),
+		Message: gjson.Get(jsonStr, "message").String(),
+	}
+
+	return ssp, nil
+}
+
+// ShuoShuoList 获取用户QQ号为uin且最多num个说说列表，每个说说获取上限replynum个评论数量
+func (m *Manager) ShuoShuoList(uin string, num int, replynum int) ([]*models.ShuoShuoResp, error) {
+	mlr := models.MsgListRequest{
+		Uin:                uin,
+		Ftype:              "0",
+		Sort:               "0",
+		Num:                strconv.Itoa(num),
+		Replynum:           strconv.Itoa(replynum),
+		GTk:                m.Gtk2,
+		Callback:           "_preloadCallback",
+		CodeVersion:        "1",
+		Format:             "json",
+		NeedPrivateComment: "1",
+	}
+
+	url := msglistURL + "?" + structToStr(mlr)
+
+	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
+		"referer": userQzoneURL,
+		"origin":  userQzoneURL,
+		"cookie":  m.Cookie,
+	})))
 	if err != nil {
-		return
+		return nil, err
 	}
-	defer response.Body.Close()
-	err = json.NewDecoder(response.Body).Decode(&result)
-	return
+	jsonStr := string(data)
+
+	resLen := gjson.Get(jsonStr, "msglist.#").Int()
+	results := make([]*models.ShuoShuoResp, min(resLen, int64(num)))
+	index := 0
+
+	lists := gjson.Get(jsonStr, "msglist").Array()
+	for _, shuoshuo := range lists {
+		ss := &models.ShuoShuoResp{
+			Uin:         shuoshuo.Get("uin").Int(),
+			Name:        shuoshuo.Get("name").String(),
+			Tid:         shuoshuo.Get("tid").String(),
+			Content:     shuoshuo.Get("content").String(),
+			CreateTime:  shuoshuo.Get("createTime").String(),
+			CreatedTime: shuoshuo.Get("created_time").Int(),
+			Pictotal:    shuoshuo.Get("pictotal").Int(),
+			Cmtnum:      shuoshuo.Get("cmtnum").Int(),
+			Secret:      shuoshuo.Get("secret").Int(),
+		}
+
+		pics := shuoshuo.Get("pic").Array()
+		for _, pic := range pics {
+			ss.Pic = append(ss.Pic, models.PicResp{
+				PicId:      pic.Get("pic_id").String(),
+				Url1:       pic.Get("url1").String(),
+				Url2:       pic.Get("url2").String(),
+				Url3:       pic.Get("url3").String(),
+				Smallurl:   pic.Get("smallurl").String(),
+				Curlikekey: pic.Get("curlikekey").String(),
+			})
+		}
+
+		results[index] = ss
+		index++
+	}
+
+	return results, nil
+}
+
+// FriendList 获取亲密度前200的好友，第一位好友是小Q（系统）
+func (m *Manager) FriendList() ([]*models.FriendInfoEasyResp, error) {
+	url := fmt.Sprintf(friendURL, m.Gtk2) + "&uin=" + m.QQ
+	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
+		"referer": userQzoneURL,
+		"origin":  userQzoneURL,
+		"cookie":  m.Cookie,
+	})))
+	if err != nil {
+		return nil, err
+	}
+	r := cRe.FindStringSubmatch(string(data))
+	if len(r) < 2 {
+		return nil, errors.New("好友正则解析错误")
+	}
+	jsonStr := r[1]
+
+	resLen := gjson.Get(jsonStr, "items.#").Int()
+	results := make([]*models.FriendInfoEasyResp, resLen)
+	index := 0
+
+	friends := gjson.Get(jsonStr, "items").Array()
+	for _, friend := range friends {
+		fie := &models.FriendInfoEasyResp{
+			Uin:     friend.Get("uin").Int(),
+			Groupid: friend.Get("groupid").Int(),
+			Name:    friend.Get("name").String(),
+			Remark:  friend.Get("remark").String(),
+			Image:   friend.Get("image").String(),
+			Online:  friend.Get("online").Int(),
+		}
+		results[index] = fie
+		index++
+	}
+
+	groupName := gjson.Get(jsonStr, "gpnames.#.gpname").Array()
+	for i := 0; i < index; i++ {
+		results[i].GroupName = groupName[results[i].Groupid].String()
+	}
+	return results, nil
+}
+
+// FriendInfoDetail 获取好友详细信息
+func (m *Manager) FriendInfoDetail(uin int64) (*models.FriendInfoDetailResp, error) {
+	url := fmt.Sprintf(detailFriendURL, m.Gtk2) + "&uin=" + strconv.FormatUint(uint64(uin), 10)
+	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
+		"referer": userQzoneURL,
+		"origin":  userQzoneURL,
+		"cookie":  m.Cookie,
+	})))
+	if err != nil {
+		return nil, err
+	}
+	r := cRe.FindStringSubmatch(string(data))
+	if len(r) < 2 {
+		return nil, errors.New("好友正则解析错误")
+	}
+	jsonStr := r[1]
+
+	fid := &models.FriendInfoDetailResp{}
+	if err := json.Unmarshal([]byte(jsonStr), fid); err != nil {
+		return nil, err
+	}
+	return fid, nil
 }
 
 // UploadImage 上传图片
-func (m *Manager) UploadImage(base64img string) (result UploadImageVo, err error) {
-	uir := UploadImageRequest{
+func (m *Manager) UploadImage(base64img string) (*models.UploadImageResp, error) {
+	uir := models.UploadImageRequest{
 		Filename:      "filename",
 		Uin:           m.QQ,
 		Skey:          m.Skey,
@@ -202,122 +250,41 @@ func (m *Manager) UploadImage(base64img string) (result UploadImageVo, err error
 		Qzreferrer:    userQzoneURL + "/" + m.QQ,
 	}
 
+	url := fmt.Sprintf(uploadImageURL, m.Gtk2)
 	payload := strings.NewReader(structToStr(uir))
-	client := &http.Client{}
-	request, err := http.NewRequest("POST", fmt.Sprintf(uploadImageURL, m.Gtk2), payload)
+	data, err := DialRequest(NewRequest(WithMethod("POST"), WithUrl(url), WithBody(payload),
+		WithHeader(map[string]string{
+			"referer": userQzoneURL,
+			"origin":  userQzoneURL,
+			"cookie":  m.Cookie,
+		})))
 	if err != nil {
-		return
+		return nil, err
 	}
-	request.Header.Add("referer", userQzoneURL)
-	request.Header.Add("origin", userQzoneURL)
-	request.Header.Add("cookie", m.Cookie)
-	request.Header.Add("user-agent", ua)
-	request.Header.Add("content-type", contentType)
-	response, err := client.Do(request)
-	if err != nil {
-		return
-	}
-	defer response.Body.Close()
-	data, err := io.ReadAll(response.Body)
 	r := cRe.FindStringSubmatch(string(data))
 	if len(r) < 2 {
-		err = errors.New("上传失败")
-		return
+		return nil, errors.New("上传失败")
 	}
-	err = json.Unmarshal([]byte(r[1]), &result)
-	return
-}
-
-// EmotionPublish 发送说说,content是文字,base64imgList是base64图片
-func (m *Manager) EmotionPublish(content string, base64imgList []string) (result EmotionPublishVo, err error) {
-	var (
-		uir         UploadImageVo
-		picBo       string
-		richval     string
-		richvalList = make([]string, 0, 9)
-		picBoList   = make([]string, 0, 9)
-	)
-
-	for _, base64img := range base64imgList {
-		uir, err = m.UploadImage(base64img)
-		if err != nil {
-			return
-		}
-		picBo, richval, err = getPicBoAndRichval(uir)
-		if err != nil {
-			return
-		}
-		richvalList = append(richvalList, richval)
-		picBoList = append(picBoList, picBo)
+	jsonStr := r[1]
+	uploadImageResp := &models.UploadImageResp{
+		Pre:        gjson.Get(jsonStr, "data.pre").String(),
+		URL:        gjson.Get(jsonStr, "data.url").String(),
+		Width:      gjson.Get(jsonStr, "data.width").Int(),
+		Height:     gjson.Get(jsonStr, "data.height").Int(),
+		OriginURL:  gjson.Get(jsonStr, "data.origin_url").String(),
+		Contentlen: gjson.Get(jsonStr, "data.contentlen").Int(),
+		Ret:        gjson.Get(jsonStr, "ret").Int(),
+		Albumid:    gjson.Get(jsonStr, "data.albumid").String(),
+		Lloc:       gjson.Get(jsonStr, "data.lloc").String(),
+		Sloc:       gjson.Get(jsonStr, "data.sloc").String(),
+		Type:       gjson.Get(jsonStr, "data.type").Int(),
 	}
-
-	epr := EmotionPublishRequest{
-		SynTweetVerson: "1",
-		Paramstr:       "1",
-		Who:            "1",
-		Con:            content,
-		Feedversion:    "1",
-		Ver:            "1",
-		UgcRight:       "1",
-		ToSign:         "0",
-		Hostuin:        m.QQ,
-		CodeVersion:    "1",
-		Format:         "json",
-		Qzreferrer:     userQzoneURL + "/" + m.QQ,
-	}
-	if len(base64imgList) > 0 {
-		epr.Richtype = "1"
-		epr.Richval = strings.Join(richvalList, "\t")
-		epr.Subrichtype = "1"
-		epr.PicBo = strings.Join(picBoList, ",")
-	}
-
-	result, err = m.EmotionPublishRaw(epr)
-	return
-}
-
-// EmotionMsglist 获取说说列表
-func (m *Manager) EmotionMsglist(num string, replynum string) (mlv MsgListVo, err error) {
-	mlr := MsgListRequest{
-		Uin:                m.QQ,
-		Ftype:              "0",
-		Sort:               "0",
-		Num:                num,
-		Replynum:           replynum,
-		GTk:                m.Gtk2,
-		Callback:           "_preloadCallback",
-		CodeVersion:        "1",
-		Format:             "json",
-		NeedPrivateComment: "1",
-	}
-	mlv, err = m.EmotionMsglistRaw(mlr)
-	return
-}
-
-// EmotionMsglistRaw 获取说说列表
-func (m *Manager) EmotionMsglistRaw(mlr MsgListRequest) (mlv MsgListVo, err error) {
-	client := &http.Client{}
-	request, err := http.NewRequest("GET", msglistURL+"?"+structToStr(mlr), nil)
-	if err != nil {
-		return
-	}
-	request.Header.Add("referer", userQzoneURL)
-	request.Header.Add("origin", userQzoneURL)
-	request.Header.Add("cookie", m.Cookie)
-	request.Header.Add("user-agent", ua)
-	request.Header.Add("content-type", contentType)
-	response, err := client.Do(request)
-	if err != nil {
-		return
-	}
-	defer response.Body.Close()
-	err = json.NewDecoder(response.Body).Decode(&mlv)
-	return
+	return uploadImageResp, nil
 }
 
 // DoLike 空间点赞
-func (m *Manager) DoLike(tid string) error {
-	lr := LikeRequest{
+func (m *Manager) DoLike(tid string) (*models.LikeResp, error) {
+	lr := models.LikeRequest{
 		Qzreferrer: userQzoneURL + m.QQ,
 		Opuin:      m.QQ,
 		Unikey:     userQzoneURL + m.QQ + "/mood/" + tid,
@@ -331,80 +298,111 @@ func (m *Manager) DoLike(tid string) error {
 }
 
 // LikeRaw 空间点赞
-func (m *Manager) LikeRaw(lr LikeRequest) (err error) {
-	client := &http.Client{}
+func (m *Manager) LikeRaw(lr models.LikeRequest) (*models.LikeResp, error) {
+	url := fmt.Sprintf(likeURL, m.Gtk2)
 	payload := strings.NewReader(structToStr(lr))
-	request, err := http.NewRequest("POST", fmt.Sprintf(likeURL, m.Gtk2), payload)
+	data, err := DialRequest(NewRequest(WithMethod("POST"), WithUrl(url),
+		WithBody(payload), WithHeader(map[string]string{
+			"referer": userQzoneURL,
+			"origin":  userQzoneURL,
+			"cookie":  m.Cookie,
+		})))
 	if err != nil {
-		return
+		return nil, err
 	}
-	request.Header.Add("referer", userQzoneURL)
-	request.Header.Add("origin", userQzoneURL)
-	request.Header.Add("cookie", m.Cookie)
-	request.Header.Add("user-agent", ua)
-	request.Header.Add("content-type", contentType)
-	response, err := client.Do(request)
-	if err != nil {
-		return
+	r := cReLike.FindStringSubmatch(string(data))
+	if len(r) < 2 {
+		return nil, errors.New("点赞正则解析失败")
 	}
-	defer response.Body.Close()
-	data, err := io.ReadAll(response.Body)
-	if err != nil {
-		return
+	likeResp := &models.LikeResp{
+		Ret: gjson.Get(r[1], "ret").Int(),
+		Msg: gjson.Get(r[1], "msg").String(),
 	}
-	if !strings.Contains(string(data), "\"msg\":\"succ\"") {
-		return errors.New(fmt.Sprintf("do like for fid:[%s] error", lr.Fid))
+	if likeResp.Msg != "succ" {
+		return nil, errors.New(fmt.Sprintf("点赞失败：[%s]", likeResp.Msg))
 	}
-	return
+	return likeResp, nil
 }
 
-// FriendList 获取亲密度前200的好友
-func (m *Manager) FriendList() (*FriendListVo, error) {
-	return m.FriendListRaw()
+// GetShuoShuoComments 根据说说ID获取所有评论，仅限本用户（m.QQ） // TODO: 待测试
+func (m *Manager) GetShuoShuoComments(tid string) (comments []*models.Comment, err error) {
+	url := fmt.Sprintf(getCommentsURL, m.QQ, 1, 1, tid, m.Gtk2)
+	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
+		"cookie": m.Cookie,
+	})))
+	if err != nil {
+		return nil, err
+	}
+	r := cRe.FindStringSubmatch(string(data))
+	if len(r) < 2 {
+		return nil, errors.New("说说评论正则解析错误")
+	}
+	jsonRaw := r[1]
+
+	// 说说的一级评论总数
+	numOfComments := gjson.Get(jsonRaw, "cmtnum").Int()
+	t := int(math.Ceil(float64(numOfComments) / 20.0))
+	var i int
+	for range t {
+		commentsTemp, err := m.getShuoShuoCommentsRaw(20, i, tid)
+		if err != nil {
+			return nil, err
+		}
+		comments = append(comments, commentsTemp...)
+		i = i + 20
+	}
+	return comments, nil
 }
 
-func (m *Manager) FriendListRaw() (*FriendListVo, error) {
-	client := &http.Client{}
-	request, err := http.NewRequest("GET", fmt.Sprintf(friendURL, m.Gtk2)+"&uin="+m.QQ, nil)
+// getShuoShuoCommentsRaw 从第pos条评论开始获取num条评论，num最大为20
+func (m *Manager) getShuoShuoCommentsRaw(num int, pos int, tid string) (comments []*models.Comment, err error) {
+	url := fmt.Sprintf(getCommentsURL, m.QQ, pos, num, tid, m.Gtk2)
+	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
+		"cookie": m.Cookie,
+	})))
 	if err != nil {
 		return nil, err
 	}
-	request.Header.Add("referer", userQzoneURL)
-	request.Header.Add("origin", userQzoneURL)
-	request.Header.Add("cookie", m.Cookie)
-	request.Header.Add("user-agent", ua)
-	request.Header.Add("content-type", contentType)
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
+	r := cRe.FindStringSubmatch(string(data))
+	if len(r) < 2 {
+		return nil, errors.New("说说评论正则解析错误")
 	}
-	defer response.Body.Close()
-	data, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
+	jsonRaw := r[1]
+	// fmt.Println("🧡🧡🧡取说说评论测试🧡🧡🧡：", jsonRaw)
+
+	// 取出评论数据
+	commentJsonList := gjson.Get(jsonRaw, "commentlist").Array()
+	for _, com := range commentJsonList {
+		comment := &models.Comment{
+			ShuoShuoID: tid,
+			OwnerName:  com.Get("owner.name").String(),
+			OwnerUin:   com.Get("owner.uin").Int(),
+			Content:    com.Get("content").String(),
+			PicContent: make([]string, 0),
+			CreateTime: time.Unix(com.Get("create_time").Int(), 0),
+		}
+		// 添加图片评论的图片到结构体
+		for _, pic := range com.Get("rich_info").Array() {
+			comment.PicContent = append(comment.PicContent, pic.Get("burl").String())
+		}
+		comments = append(comments, comment)
 	}
-	//body := data[len("_Callback(") : len(data)-len(");")-1]
-	body := cRe.FindStringSubmatch(string(data))
-	flv := &FriendListVo{}
-	if err = json.Unmarshal([]byte(body[1]), flv); err != nil {
-		err = errors.New("json unmarshal error: " + err.Error())
-		return nil, err
-	}
-	return flv, nil
+
+	return comments, nil
 }
 
-// 上传图片资源
-func getPicBoAndRichval(data UploadImageVo) (picBo, richval string, err error) {
+// getPicBoAndRichval 上传图片资源
+func getPicBoAndRichval(data *models.UploadImageResp) (picBo, richval string, err error) {
 	var flag bool
 	if data.Ret != 0 {
 		err = errors.New("上传失败")
 		return
 	}
-	_, picBo, flag = strings.Cut(data.Data.URL, "&bo=")
+	_, picBo, flag = strings.Cut(data.URL, "&bo=")
 	if !flag {
 		err = errors.New("上传图片返回的地址错误")
 		return
 	}
-	richval = fmt.Sprintf(",%s,%s,%s,%d,%d,%d,,%d,%d", data.Data.Albumid, data.Data.Lloc, data.Data.Sloc, data.Data.Type, data.Data.Height, data.Data.Width, data.Data.Height, data.Data.Width)
+	richval = fmt.Sprintf(",%s,%s,%s,%d,%d,%d,,%d,%d", data.Albumid, data.Lloc, data.Sloc, data.Type, data.Height, data.Width, data.Height, data.Width)
 	return
 }

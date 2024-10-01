@@ -1,7 +1,6 @@
 package examples
 
 import (
-	"encoding/base64"
 	"fmt"
 	"github.com/HHU-47133/qzone"
 	"os"
@@ -11,10 +10,10 @@ import (
 )
 
 var (
-	ImageTestPath = "D:\\1.png"
-	QrcodeName    = "ptqrcode.png"
+	QrcodeName = "ptqrcode.png"
 )
 
+// 登录测试
 func TestLogin(t *testing.T) {
 	var m qzone.Manager
 	// 1. 获取二维码信息（data），取出cookie重要参数（qrsig、ptqrtoken）
@@ -59,23 +58,5 @@ LOOP:
 	}
 
 	// 6. 执行其它接口操作
-	// 7. 读取本地图片
-	srcByte, err := os.ReadFile(ImageTestPath)
-	if err != nil {
-		t.Log("read image error", err)
-	}
-	// 8. base64编码
-	picBase64 := base64.StdEncoding.EncodeToString(srcByte)
-	// 9. 上传图片
-	uploadResult, err := m.UploadImage(picBase64)
-	if err != nil {
-		t.Log("upload image error: ", err)
-	}
-	t.Log(uploadResult)
-	// 10. 发说说
-	publishResult, err := m.EmotionPublish("content", []string{picBase64})
-	if err != nil {
-		t.Log("publish post error: ", err)
-	}
-	t.Log(publishResult)
+	fmt.Println(m.Uin, m.QQ, m.Gtk2, m.Cookie)
 }

@@ -2,7 +2,6 @@ package examples
 
 import (
 	"encoding/base64"
-	"fmt"
 	"github.com/HHU-47133/qzone"
 	"os"
 	"testing"
@@ -10,37 +9,54 @@ import (
 
 var (
 	// cookie 登录成功后的 cookie
-	cookie = "pt2gguin=o1778046356;uin=o1778046356;skey=@NUftqZ3Sz;superuin=o1778046356;supertoken=1507384333;superkey=t7CIc38A*taBvketZpLctoUQYasJRLWR4XRP7M*4Gb4_;pt_recent_uins=e75c7ec9ec417d7ea917bd19da77e9a119369850a1ca2538d04eace4a4207714aca2f5199dfc5c74203d8a58865663cfc3e41f53e56d3350;RK=SqfoqwciGJ;ptnick_1778046356=e69e97c2b7e4b883e5a49c;ptcz=96c9e1cfde41dcc3ff599fa29a0d8ac47a01553e44f9635a86b00df6afe26456;uin=o1778046356;skey=@NUftqZ3Sz;pt2gguin=o1778046356;p_uin=o1778046356;pt4_token=bm1UAyvj9t1GJL7trkGCXPpZKzJl4ILTCk9DnpANpWE_;p_skey=pvhxGuxysp-fP3MLJNhAOHpFczuylP0jGL1y0JkPDZM_;"
-
+	cookie = "qrsig=ee0ab68371f81acebb61f376031ddbe5fe05788f442a8c1c1e5c6b45e8626a5de6cabe9100e9aec0046233f02b2c92ad18fd04ef76fd9651;uin=o1294222408;skey=@rh555XIz6;pt2gguin=o1294222408;p_uin=o1294222408;pt4_token=lYmEvOyIkgCUFQBGmFvmnVEUXaTbTmjJywe7nZm2Ofg_;p_skey=QUIv-nrrgdVK4BtkG1-uNNKBwtaDyrm3OPliG6dT4n0_;"
+	//用于测试评论获取的说说tid
+	tid = ""
+	//用于测试的好友qq
+	friendQQ = ""
 	// ImageTestPath1 测试图片1路径
 	ImageTestPath1 = "D:\\1.png"
 	// ImageTestPath2 测试图片2路径
 	ImageTestPath2 = "D:\\2.jpg"
 )
 
-// 获取所有的说说
-func TestGetPostList(t *testing.T) {
+// 调用低级别API获取指定数量说说
+func TestGetPostListRaw(t *testing.T) {
 	m := qzone.NewManager(cookie)
-	ssl, err := m.ShuoShuoList(m.QQ, 20, 5)
+	ssl, err := m.ShuoShuoListRaw(friendQQ, 5, 0, 5)
 	if err != nil {
 		t.Fatal(err)
 	}
+	for i, shuoshuo := range ssl {
+		t.Logf("got shuoshuo No.[%d]: %+v", i, shuoshuo)
+		if i == 0 {
+			tid = shuoshuo.Tid
+		}
+	}
+}
 
-	for _, shuoshuo := range ssl {
-		fmt.Println(shuoshuo)
+// 调用高级别API获取全部说说
+func TestGetPostList(t *testing.T) {
+	m := qzone.NewManager(cookie)
+	ssl, err := m.ShuoShuoList(friendQQ)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, shuoshuo := range ssl {
+		t.Logf("[全部说说获取成功] No.[%d]", i)
+		t.Log(shuoshuo.Uin, shuoshuo.Name, shuoshuo.Content, shuoshuo.Pictotal)
 	}
 }
 
 // 获取说说所有的一级评论
 func TestGetComments(t *testing.T) {
 	m := qzone.NewManager(cookie)
-	comments, err := m.GetShuoShuoComments("94d5fa69b8fcf766a1630b00")
+	comments, err := m.GetShuoShuoComments(tid)
 	if err != nil {
-		t.Fatal(err)
+		t.Log("get comments failed:", err)
 	}
-	fmt.Println("🧡🧡🧡评论结构体🧡🧡🧡：")
-	for _, comment := range comments {
-		fmt.Printf("%+v\n", comment)
+	for i, comment := range comments {
+		t.Logf("got comment No.[%d]:%+v\n", i, comment)
 	}
 }
 
@@ -50,16 +66,26 @@ func TestUploadImage(t *testing.T) {
 	// 读取本地图片
 	srcByte, err := os.ReadFile(ImageTestPath1)
 	if err != nil {
-		t.Log("read image error", err)
+		t.Log("[读取本地图片失败]", err)
 	}
 	// base64编码
 	picBase64 := base64.StdEncoding.EncodeToString(srcByte)
 	// 上传图片
 	uploadResult, err := m.UploadImage(picBase64)
 	if err != nil {
-		t.Log("upload image error: ", err)
+		t.Log("[上传文件失败]", err)
 	}
-	t.Log(uploadResult)
+	t.Log("[上传图片成功]", uploadResult.URL)
+}
+
+// 获取说说总数
+func TestShuoShuoCount(t *testing.T) {
+	m := qzone.NewManager(cookie)
+	cnt, err := m.GetShuoShuoCount(friendQQ)
+	if err != nil {
+		t.Fatal("[获取说说总数失败]", err)
+	}
+	t.Logf("[%s]获取说说总数成功:%d", friendQQ, cnt)
 }
 
 // 发布说说
@@ -68,7 +94,7 @@ func TestPublishShuoShuo(t *testing.T) {
 	// 1. 读取本地图片
 	srcByte, err := os.ReadFile(ImageTestPath1)
 	if err != nil {
-		t.Log("read image error", err)
+		t.Log("[read image error]", err)
 	}
 	// 2. base64编码
 	pic1Base64 := base64.StdEncoding.EncodeToString(srcByte)
@@ -80,7 +106,10 @@ func TestPublishShuoShuo(t *testing.T) {
 	t.Log(uploadResult)
 
 	// 读取上传第二张图片
-	srcByte, _ = os.ReadFile(ImageTestPath2)
+	srcByte, err = os.ReadFile(ImageTestPath2)
+	if err != nil {
+		t.Log("read image2 error", err)
+	}
 	pic2Base64 := base64.StdEncoding.EncodeToString(srcByte)
 	_, _ = m.UploadImage(pic2Base64)
 	// 4. 发说说

@@ -93,12 +93,67 @@ func (m *Manager) publishShuoShuo(epr models.EmotionPublishRequest) (*models.Shu
 	return ssp, nil
 }
 
-// ShuoShuoList 获取用户QQ号为uin且最多num个说说列表，每个说说获取上限replynum个评论数量
-func (m *Manager) ShuoShuoList(uin string, num int, replynum int) ([]*models.ShuoShuoResp, error) {
+// ShuoShuoList 获取所有说说 TODO:实际能访问的说说个数 <= 说说总数(空间仅展示近半年等情况)
+func (m *Manager) ShuoShuoList(uin string) (ShuoShuo []*models.ShuoShuoResp, err error) {
+	cnt, err := m.GetShuoShuoCount(uin)
+	if err != nil {
+		return nil, err
+	}
+	t := int(math.Ceil(float64(cnt) / 20.0))
+	var i int
+	for range t {
+		ShuoShuoTemp, err := m.ShuoShuoListRaw(uin, 20, i, 0)
+		if err != nil {
+			return nil, err
+		}
+		ShuoShuo = append(ShuoShuo, ShuoShuoTemp...)
+		i = i + 20
+		time.Sleep(time.Second)
+	}
+	return ShuoShuo, nil
+}
+
+// GetShuoShuoCount 获取用户QQ号为uin的说说总数
+func (m *Manager) GetShuoShuoCount(uin string) (num int64, err error) {
 	mlr := models.MsgListRequest{
 		Uin:                uin,
 		Ftype:              "0",
 		Sort:               "0",
+		Pos:                "0",
+		Num:                "1",
+		Replynum:           "0",
+		GTk:                m.Gtk2,
+		Callback:           "_preloadCallback",
+		CodeVersion:        "1",
+		Format:             "json",
+		NeedPrivateComment: "1",
+	}
+	url := msglistURL + "?" + structToStr(mlr)
+	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
+		"referer": userQzoneURL,
+		"origin":  userQzoneURL,
+		"cookie":  m.Cookie,
+	})))
+	if err != nil {
+		return -1, err
+	}
+	jsonStr := string(data)
+	// 判断是否有访问权限
+	forbid := gjson.Get(jsonStr, "message").String()
+	if forbid != "" {
+		return -1, errors.New("[查询说说总数失败]" + forbid)
+	}
+	num = gjson.Get(jsonStr, "total").Int()
+	return num, nil
+}
+
+// ShuoShuoList 获取用户QQ号为uin且最多num个说说列表，每个说说获取上限replynum个评论数量
+func (m *Manager) ShuoShuoListRaw(uin string, num int, pos int, replynum int) ([]*models.ShuoShuoResp, error) {
+	mlr := models.MsgListRequest{
+		Uin:                uin,
+		Ftype:              "0",
+		Sort:               "0",
+		Pos:                strconv.Itoa(pos),
 		Num:                strconv.Itoa(num),
 		Replynum:           strconv.Itoa(replynum),
 		GTk:                m.Gtk2,
@@ -109,7 +164,6 @@ func (m *Manager) ShuoShuoList(uin string, num int, replynum int) ([]*models.Shu
 	}
 
 	url := msglistURL + "?" + structToStr(mlr)
-
 	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
 		"referer": userQzoneURL,
 		"origin":  userQzoneURL,
@@ -119,6 +173,11 @@ func (m *Manager) ShuoShuoList(uin string, num int, replynum int) ([]*models.Shu
 		return nil, err
 	}
 	jsonStr := string(data)
+	// 判断是否有访问权限
+	forbid := gjson.Get(jsonStr, "message").String()
+	if forbid != "" {
+		return nil, errors.New("[获取说说失败]" + forbid)
+	}
 
 	resLen := gjson.Get(jsonStr, "msglist.#").Int()
 	results := make([]*models.ShuoShuoResp, min(resLen, int64(num)))
@@ -170,10 +229,9 @@ func (m *Manager) FriendList() ([]*models.FriendInfoEasyResp, error) {
 	}
 	r := cRe.FindStringSubmatch(string(data))
 	if len(r) < 2 {
-		return nil, errors.New("好友正则解析错误")
+		return nil, errors.New("[好友正则解析错误]" + string(data))
 	}
 	jsonStr := r[1]
-
 	resLen := gjson.Get(jsonStr, "items.#").Int()
 	results := make([]*models.FriendInfoEasyResp, resLen)
 	index := 0
@@ -212,7 +270,7 @@ func (m *Manager) FriendInfoDetail(uin int64) (*models.FriendInfoDetailResp, err
 	}
 	r := cRe.FindStringSubmatch(string(data))
 	if len(r) < 2 {
-		return nil, errors.New("好友正则解析错误")
+		return nil, errors.New("[好友正则解析错误]" + string(data))
 	}
 	jsonStr := r[1]
 
@@ -335,7 +393,7 @@ func (m *Manager) GetShuoShuoComments(tid string) (comments []*models.Comment, e
 	}
 	r := cRe.FindStringSubmatch(string(data))
 	if len(r) < 2 {
-		return nil, errors.New("说说评论正则解析错误")
+		return nil, errors.New("[说说评论正则解析错误]" + string(data))
 	}
 	jsonRaw := r[1]
 
@@ -350,6 +408,7 @@ func (m *Manager) GetShuoShuoComments(tid string) (comments []*models.Comment, e
 		}
 		comments = append(comments, commentsTemp...)
 		i = i + 20
+		time.Sleep(time.Second)
 	}
 	return comments, nil
 }
@@ -365,10 +424,9 @@ func (m *Manager) getShuoShuoCommentsRaw(num int, pos int, tid string) (comments
 	}
 	r := cRe.FindStringSubmatch(string(data))
 	if len(r) < 2 {
-		return nil, errors.New("说说评论正则解析错误")
+		return nil, errors.New("[说说评论正则解析错误]" + string(data))
 	}
 	jsonRaw := r[1]
-	// fmt.Println("🧡🧡🧡取说说评论测试🧡🧡🧡：", jsonRaw)
 
 	// 取出评论数据
 	commentJsonList := gjson.Get(jsonRaw, "commentlist").Array()
@@ -387,7 +445,6 @@ func (m *Manager) getShuoShuoCommentsRaw(num int, pos int, tid string) (comments
 		}
 		comments = append(comments, comment)
 	}
-
 	return comments, nil
 }
 

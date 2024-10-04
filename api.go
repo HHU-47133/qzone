@@ -93,7 +93,7 @@ func (m *Manager) publishShuoShuo(epr models.EmotionPublishRequest) (*models.Shu
 	return ssp, nil
 }
 
-// ShuoShuoList 获取所有说说 TODO:实际能访问的说说个数 <= 说说总数(空间仅展示近半年等情况)
+// ShuoShuoList 获取所有说说 实际能访问的说说个数 <= 说说总数(空间仅展示近半年等情况)
 func (m *Manager) ShuoShuoList(uin string) (ShuoShuo []*models.ShuoShuoResp, err error) {
 	cnt, err := m.GetShuoShuoCount(uin)
 	if err != nil {
@@ -147,7 +147,16 @@ func (m *Manager) GetShuoShuoCount(uin string) (num int64, err error) {
 	return num, nil
 }
 
-// ShuoShuoList 获取用户QQ号为uin且最多num个说说列表，每个说说获取上限replynum个评论数量
+// GetLatestShuoShuo 获取用户QQ号为uin的最新说说
+func (m *Manager) GetLatestShuoShuo(uin string) (*models.ShuoShuoResp, error) {
+	ss, err := m.ShuoShuoListRaw(uin, 1, 0, 0)
+	if err != nil {
+		return nil, err
+	}
+	return ss[0], nil
+}
+
+// ShuoShuoList 获取用户QQ号为uin且最多num个说说列表，每个说说获取上限replynum个评论数量 TODO:replynum无效果，说说评论展示条数和num绑定
 func (m *Manager) ShuoShuoListRaw(uin string, num int, pos int, replynum int) ([]*models.ShuoShuoResp, error) {
 	mlr := models.MsgListRequest{
 		Uin:                uin,
@@ -173,6 +182,7 @@ func (m *Manager) ShuoShuoListRaw(uin string, num int, pos int, replynum int) ([
 		return nil, err
 	}
 	jsonStr := string(data)
+	//fmt.Println("获取所有说说json:", jsonStr)
 	// 判断是否有访问权限
 	forbid := gjson.Get(jsonStr, "message").String()
 	if forbid != "" {

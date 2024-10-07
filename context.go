@@ -1,6 +1,6 @@
 package qzone
 
-// TODO: 没想好怎么设计...
+// TODO: https://github.com/aeilang/context/blob/main/mycontext/mycontext.go
 
 import "math"
 

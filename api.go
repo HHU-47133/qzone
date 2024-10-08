@@ -7,6 +7,7 @@ import (
 	"github.com/HHU-47133/qzone/models"
 	"github.com/tidwall/gjson" // TODO: 疑问？需要处理 body 中的 \n
 	"math"
+	"math/rand/v2"
 	"regexp"
 	"strconv"
 	"strings"
@@ -93,7 +94,7 @@ func (m *Manager) publishShuoShuo(epr models.EmotionPublishRequest) (*models.Shu
 	return ssp, nil
 }
 
-// ShuoShuoList 获取所有说说 TODO:实际能访问的说说个数 <= 说说总数(空间仅展示近半年等情况)
+// ShuoShuoList 获取所有说说 实际能访问的说说个数 <= 说说总数(空间仅展示近半年等情况)
 func (m *Manager) ShuoShuoList(uin string) (ShuoShuo []*models.ShuoShuoResp, err error) {
 	cnt, err := m.GetShuoShuoCount(uin)
 	if err != nil {
@@ -147,7 +148,16 @@ func (m *Manager) GetShuoShuoCount(uin string) (num int64, err error) {
 	return num, nil
 }
 
-// ShuoShuoList 获取用户QQ号为uin且最多num个说说列表，每个说说获取上限replynum个评论数量
+// GetLatestShuoShuo 获取用户QQ号为uin的最新说说
+func (m *Manager) GetLatestShuoShuo(uin string) (*models.ShuoShuoResp, error) {
+	ss, err := m.ShuoShuoListRaw(uin, 1, 0, 0)
+	if err != nil {
+		return nil, err
+	}
+	return ss[0], nil
+}
+
+// ShuoShuoListRaw 获取用户QQ号为uin且最多num个说说列表，每个说说获取上限replynum个评论数量 TODO:replynum无效果，说说评论展示条数和num绑定
 func (m *Manager) ShuoShuoListRaw(uin string, num int, pos int, replynum int) ([]*models.ShuoShuoResp, error) {
 	mlr := models.MsgListRequest{
 		Uin:                uin,
@@ -173,6 +183,7 @@ func (m *Manager) ShuoShuoListRaw(uin string, num int, pos int, replynum int) ([
 		return nil, err
 	}
 	jsonStr := string(data)
+	//fmt.Println("获取所有说说json:", jsonStr)
 	// 判断是否有访问权限
 	forbid := gjson.Get(jsonStr, "message").String()
 	if forbid != "" {
@@ -380,6 +391,46 @@ func (m *Manager) LikeRaw(lr models.LikeRequest) (*models.LikeResp, error) {
 		return nil, errors.New(fmt.Sprintf("点赞失败：[%s]", likeResp.Msg))
 	}
 	return likeResp, nil
+}
+
+// GetQQGroup 获取QQ群
+func (m *Manager) GetQQGroup() ([]*models.QQGroupResp, error) {
+	gr := &models.QQGroupReq{
+		Uin:     m.QQ,
+		Do:      "1",
+		Rd:      fmt.Sprintf("%010.8f", rand.Float64()),
+		Fupdate: "1",
+		Clean:   "1",
+		GTk:     m.Gtk2,
+	}
+	url := getQQGroup + structToStr(gr)
+	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
+		"user-agent": ua,
+		"cookie":     m.Cookie,
+	})))
+	if err != nil {
+		return nil, err
+	}
+	r := cRe.FindStringSubmatch(string(data))
+	if len(r) < 2 {
+		return nil, errors.New("[QQ群正则解析错误]" + string(data))
+	}
+	jsonStr := r[1]
+	resLen := gjson.Get(jsonStr, "data.group.#").Int()
+	results := make([]*models.QQGroupResp, resLen)
+	index := 0
+	groups := gjson.Get(jsonStr, "data.group").Array()
+	for _, group := range groups {
+		gro := &models.QQGroupResp{
+			GroupCode:   group.Get("groupcode").Int(),
+			GroupName:   group.Get("groupname").String(),
+			TotalMember: group.Get("total_member").Int(),
+			NotFriends:  group.Get("notfriends").Int(),
+		}
+		results[index] = gro
+		index++
+	}
+	return results, nil
 }
 
 // GetShuoShuoComments 根据说说ID获取所有评论，仅限本用户（m.QQ） // TODO: 待测试

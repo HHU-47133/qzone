@@ -21,3 +21,15 @@ func TestGetFriendLists(t *testing.T) {
 	}
 	friendQQ = strconv.FormatInt(friends[0].Uin, 10)
 }
+
+func TestQQGroupList(t *testing.T) {
+	m := qzone.NewManager(cookie)
+	groups, err := m.GetQQGroup()
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	for _, v := range groups {
+		fmt.Println("[QQ群信息]", v.GroupCode, v.GroupName, v.TotalMember, v.NotFriends)
+	}
+}

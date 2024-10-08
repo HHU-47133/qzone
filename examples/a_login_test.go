@@ -59,4 +59,5 @@ LOOP:
 
 	// 6. 执行其它接口操作
 	fmt.Println(m.Uin, m.QQ, m.Gtk2, m.Cookie)
+	//m.GetLikeListRaw("3386013275", "5b76d2c933d50467f2d50e00", 60, 1)
 }

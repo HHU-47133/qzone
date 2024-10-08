@@ -11,6 +11,24 @@ type ShuoShuoPublishResp struct {
 	Message  string // ？错误后返回的消息
 }
 
+// QQGroupReq 获取QQ群请求结构体
+type QQGroupReq struct {
+	Uin     string `json:"uin"`
+	Do      string `json:"do"`
+	Rd      string `json:"rd"`
+	Fupdate string `json:"fupdate"`
+	Clean   string `json:"clean"`
+	GTk     string `json:"g_tk"`
+}
+
+// QQGroupResp 获取QQ群响应结构体
+type QQGroupResp struct {
+	GroupCode   int64  `json:"groupcode"`    //群号
+	GroupName   string `json:"groupname"`    //群名
+	TotalMember int64  `json:"total_member"` //群人数
+	NotFriends  int64  `json:"notfriends"`   //群里非好友人数
+}
+
 // ShuoShuoResp 说说响应结构体
 type ShuoShuoResp struct {
 	Uin         int64  // 用户QQ

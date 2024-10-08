@@ -34,3 +34,8 @@ func structToStr(in interface{}) (payload string) {
 	payload = strings.Join(keys, "&")
 	return
 }
+
+// 获取说说详情页面
+func getShuoShuoUnikey(uin string, tid string) (unikey string) {
+	return fmt.Sprintf("http://user.qzone.qq.com/%s/mood/%s", uin, tid)
+}

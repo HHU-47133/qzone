@@ -9,7 +9,7 @@ import (
 
 var (
 	// cookie 登录成功后的 cookie
-	cookie = "qrsig=ee0ab68371f81acebb61f376031ddbe5fe05788f442a8c1c1e5c6b45e8626a5de6cabe9100e9aec0046233f02b2c92ad18fd04ef76fd9651;uin=o1294222408;skey=@rh555XIz6;pt2gguin=o1294222408;p_uin=o1294222408;pt4_token=lYmEvOyIkgCUFQBGmFvmnVEUXaTbTmjJywe7nZm2Ofg_;p_skey=QUIv-nrrgdVK4BtkG1-uNNKBwtaDyrm3OPliG6dT4n0_;"
+	cookie = "pt2gguin=o1294222408;uin=o1294222408;skey=@3XH6MgHwJ;superuin=o1294222408;supertoken=1345753850;superkey=kpHB4cC*62Dko5SDAi5coaXuZpZf0BTa1EitqsjGR-I_;pt_recent_uins=3934a0f118d4f78ea224787f698cad683a7c0c79637a6e61194e55bb84e3c4cd29277b3c82a4f8aef4feaa3a6137f502395e9009a5ce53aa;RK=SuFZBxEiGc;ptnick_1294222408=52;ptcz=5ad1d238891c3c61d2034451003df530f2c35dda6948ea6e3f7314a1305d148a;uin=o1294222408;skey=@3XH6MgHwJ;pt2gguin=o1294222408;p_uin=o1294222408;pt4_token=H6mUR4Ku6zmILeQtsQHzJRwoJV439u9zyJkZioC3YA4_;p_skey=*ytdvBj12jM58Z167LYTAK2S8i1x7StA0GXS2DWiAqc_;"
 	//用于测试评论获取的说说tid
 	tid = ""
 	//用于测试的好友qq
@@ -23,7 +23,7 @@ var (
 // 调用低级别API获取指定数量说说
 func TestGetPostListRaw(t *testing.T) {
 	m := qzone.NewManager(cookie)
-	ssl, err := m.ShuoShuoListRaw(friendQQ, 5, 0, 5)
+	ssl, err := m.ShuoShuoListRaw(m.QQ, 1, 0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,10 +35,20 @@ func TestGetPostListRaw(t *testing.T) {
 	}
 }
 
+// 获取最新说说
+func TestLatestShuoShuo(t *testing.T) {
+	m := qzone.NewManager(cookie)
+	ss, err := m.GetLatestShuoShuo(m.QQ)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("[获取最新说说成功]", ss.Name, ss.Content, ss.Tid, ss.CreatedTime)
+}
+
 // 调用高级别API获取全部说说
 func TestGetPostList(t *testing.T) {
 	m := qzone.NewManager(cookie)
-	ssl, err := m.ShuoShuoList(friendQQ)
+	ssl, err := m.ShuoShuoList(m.QQ)
 	if err != nil {
 		t.Fatal(err)
 	}

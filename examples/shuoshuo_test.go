@@ -9,7 +9,7 @@ import (
 
 var (
 	// cookie 登录成功后的 cookie
-	cookie = "pt2gguin=o1294222408;uin=o1294222408;skey=@8A2k5D66G;superuin=o1294222408;supertoken=132613139;superkey=0U0zUA7GLcdqqbHC6v8yuUr8zglpw7YKvSaicjxe5Fw_;pt_recent_uins=7979500c8a9f2795751d911c1a01e4ba18c8b5a3d4712a880577bfb7192548244ba2773d9754b047d57e6999a16587a1e764d143126db7b8;RK=ouEZExEDH8;ptnick_1294222408=52;ptcz=9f064549e40519dd3a659df016be642eea9c15e976a9c32a2760ffe36b0ba841;uin=o1294222408;skey=@8A2k5D66G;pt2gguin=o1294222408;p_uin=o1294222408;pt4_token=Igh1BdG5Gc89osBdxK6TMBumHhXpiJ5WtZdnnC0DgI4_;p_skey=1HGru3UwIHUbl7LHqvGS8pFVZPxGRWC26-aTeqyoKuk_;"
+	cookie = "pt2gguin=o1294222408;uin=o1294222408;skey=@3XH6MgHwJ;superuin=o1294222408;supertoken=1345753850;superkey=kpHB4cC*62Dko5SDAi5coaXuZpZf0BTa1EitqsjGR-I_;pt_recent_uins=3934a0f118d4f78ea224787f698cad683a7c0c79637a6e61194e55bb84e3c4cd29277b3c82a4f8aef4feaa3a6137f502395e9009a5ce53aa;RK=SuFZBxEiGc;ptnick_1294222408=52;ptcz=5ad1d238891c3c61d2034451003df530f2c35dda6948ea6e3f7314a1305d148a;uin=o1294222408;skey=@3XH6MgHwJ;pt2gguin=o1294222408;p_uin=o1294222408;pt4_token=H6mUR4Ku6zmILeQtsQHzJRwoJV439u9zyJkZioC3YA4_;p_skey=*ytdvBj12jM58Z167LYTAK2S8i1x7StA0GXS2DWiAqc_;"
 	//用于测试评论获取的说说tid
 	tid = ""
 	//用于测试的好友qq

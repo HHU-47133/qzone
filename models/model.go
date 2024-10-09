@@ -29,6 +29,23 @@ type QQGroupResp struct {
 	NotFriends  int64  `json:"notfriends"`   //群里非好友人数
 }
 
+// QQGroupMemberReq QQ群非好友请求结构体
+type QQGroupMemberReq struct {
+	Uin     interface{} `json:"uin"` //QQ
+	Gid     interface{} `json:"gid"` //群号
+	Fupdate string      `json:"fupdate"`
+	Type    string      `json:"type"`
+	GTk     interface{} `json:"g_tk"`
+}
+
+// QQGroupMemberResp QQ群非好友响应结构体
+type QQGroupMemberResp struct {
+	Uin       int64  `json:"fuin"` //QQ
+	NickName  string `json:"name"` //昵称
+	AvatarURL string `json:"img"`  //头像
+	GroupCode int64  `json:"gid"`  //所属群
+}
+
 // ShuoShuoResp 说说响应结构体
 type ShuoShuoResp struct {
 	Uin         int64  // 用户QQ

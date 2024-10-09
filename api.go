@@ -403,7 +403,7 @@ func (m *Manager) GetQQGroup() ([]*models.QQGroupResp, error) {
 		Clean:   "1",
 		GTk:     m.Gtk2,
 	}
-	url := getQQGroup + structToStr(gr)
+	url := getQQGroupURL + structToStr(gr)
 	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
 		"user-agent": ua,
 		"cookie":     m.Cookie,
@@ -427,6 +427,45 @@ func (m *Manager) GetQQGroup() ([]*models.QQGroupResp, error) {
 			TotalMember: group.Get("total_member").Int(),
 			NotFriends:  group.Get("notfriends").Int(),
 		}
+		results[index] = gro
+		index++
+	}
+	return results, nil
+}
+
+// GetQQGroupMember 获取QQ群非好友信息
+func (m *Manager) GetQQGroupMember(gid int64) ([]*models.QQGroupMemberResp, error) {
+	gmr := &models.QQGroupMemberReq{
+		Uin:     m.QQ,
+		Gid:     strconv.FormatInt(gid, 10),
+		Fupdate: "1",
+		Type:    "1",
+		GTk:     m.Gtk2,
+	}
+	url := getQQGroupMemberURL + structToStr(gmr)
+	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
+		"user-agent": ua,
+		"cookie":     m.Cookie,
+	})))
+	if err != nil {
+		fmt.Println(err)
+	}
+	r := cRe.FindStringSubmatch(string(data))
+	if len(r) < 2 {
+		return nil, errors.New("[QQ群非好友正则解析错误]" + string(data))
+	}
+	jsonStr := r[1]
+	resLen := gjson.Get(jsonStr, "data.notfriends").Int()
+	results := make([]*models.QQGroupMemberResp, resLen)
+	index := 0
+	groupMembers := gjson.Get(jsonStr, "data.friends").Array()
+	for _, groupMember := range groupMembers {
+		gro := &models.QQGroupMemberResp{
+			Uin:       groupMember.Get("fuin").Int(),
+			NickName:  groupMember.Get("name").String(),
+			AvatarURL: groupMember.Get("img").String(),
+		}
+		gro.GroupCode = gjson.Get(jsonStr, "data.groupcode").Int()
 		results[index] = gro
 		index++
 	}

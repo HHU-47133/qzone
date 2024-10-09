@@ -15,7 +15,7 @@ func TestGetFriendLists(t *testing.T) {
 		return
 	}
 	for _, v := range friends {
-		fmt.Println("好友简略信息：", v.Name, v.Uin, v.Online, v.Image, v.GroupName)
+		fmt.Println("[好友简略信息]", v.Name, v.Uin, v.Online, v.Image, v.GroupName)
 		//fid, _ := m.FriendInfoDetail(v.Uin) TODO:详细信息获取有时候会莫名报错
 		//fmt.Println("好友详细信息：", fid.Uin, fid.Age, fid.Nickname, fid.Sex, fid.Birthyear, fid.Birthday, fid.Country, fid.Province, fid.City, fid.Mailname, fid.Mailcellphone, fid.Avatar, fid.Signature)
 	}
@@ -31,5 +31,17 @@ func TestQQGroupList(t *testing.T) {
 	}
 	for _, v := range groups {
 		fmt.Println("[QQ群信息]", v.GroupCode, v.GroupName, v.TotalMember, v.NotFriends)
+	}
+}
+
+func TestGroupMember(t *testing.T) {
+	m := qzone.NewManager(cookie)
+	groupMember, err := m.GetQQGroupMember(975807068)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	for _, v := range groupMember {
+		fmt.Println("[QQ群非好友信息]", v.Uin, v.NickName, v.AvatarURL, v.GroupCode)
 	}
 }

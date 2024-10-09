@@ -53,7 +53,6 @@ ShuoShuoPublishResp, err = m.PublishShuoShuo("content", []string{picBase64})
 ShuoShuoResp, err = m.ShuoShuoList(m.QQ, 20, 5)
 ```
 
-
 ### 获取说说所有一级评论
 
 ```go
@@ -107,6 +106,17 @@ FriendInfoDetailResp, err = m.FriendInfoDetail(friend.uin)
 LikeResp, err = m.DoLike(shuoshuo.tid)
 ```
 
+### 获取QQ群
+```go
+// GetQQGroup()
+groups, err := m.GetQQGroup()
+```
+### 获取QQ群非好友
+```go
+// GetQQGroupMember(gid int64) 
+// gid:群号
+groupMember, err := m.GetQQGroupMember(975807068)
+```
 
 ## model 
 

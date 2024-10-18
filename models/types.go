@@ -8,7 +8,7 @@ type EmotionPublishRequest struct {
 	Con            string `json:"con"`
 	Feedversion    string `json:"feedversion"`
 	Format         string `json:"format"`
-	Hostuin        string `json:"hostuin"`
+	Hostuin        int64  `json:"hostuin"`
 	Paramstr       string `json:"paramstr"`
 	PicBo          string `json:"pic_bo"`
 	PicTemplate    string `json:"pic_template"`
@@ -74,18 +74,18 @@ type UploadImageRequest struct {
 	OutputCharset    string `json:"output_charset"`
 	OutputType       string `json:"output_type"`
 	PSkey            string `json:"p_skey"`
-	PUin             string `json:"p_uin"`
+	PUin             int64  `json:"p_uin"`
 	Picfile          string `json:"picfile"`
 	Qzonetoken       string `json:"qzonetoken"`
 	Qzreferrer       string `json:"qzreferrer"`
 	Refer            string `json:"refer"`
 	Skey             string `json:"skey"`
-	Uin              string `json:"uin"`
+	Uin              int64  `json:"uin"`
 	UploadHd         string `json:"upload_hd"`
 	Uploadtype       string `json:"uploadtype"`
 	URL              string `json:"url"`
 	Zzpanelkey       string `json:"zzpanelkey"`
-	Zzpaneluin       string `json:"zzpaneluin"`
+	Zzpaneluin       int64  `json:"zzpaneluin"`
 }
 
 //// UploadImageVo 上传图片响应体
@@ -122,13 +122,13 @@ type MsgListRequest struct {
 	Pos                string `json:"pos"`
 	Replynum           string `json:"replynum"`
 	Sort               string `json:"sort"`
-	Uin                string `json:"uin"`
+	Uin                int64  `json:"uin"`
 }
 
 // LikeRequest 空间点赞请求体
 type LikeRequest struct {
 	Curkey     string `json:"curkey"`
-	Opuin      string `json:"opuin"`
+	Opuin      int64  `json:"opuin"`
 	Qzreferrer string `json:"qzreferrer"`
 	Unikey     string `json:"unikey"`
 	Fid        string `json:"fid"`
@@ -156,7 +156,7 @@ type LikeRequest struct {
 
 // FriendInfoDetail 好友详细信息
 type FriendInfoDetail struct {
-	Uin                  uint32        `json:"uin"`
+	Uin                  int32         `json:"uin"`
 	IsFamous             bool          `json:"is_famous"`
 	FamousCustomHomepage bool          `json:"famous_custom_homepage"`
 	Nickname             string        `json:"nickname"`

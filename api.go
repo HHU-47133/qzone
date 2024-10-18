@@ -317,7 +317,7 @@ func (m *Manager) GetShuoShuoCount(uin int64) (cnt int64, err error) {
 
 // GetLevel1CommentCount 获取一级评论总数
 func (m *Manager) GetLevel1CommentCount(tid string) (cnt int64, err error) {
-	url := fmt.Sprintf(getCommentsURL, strconv.FormatInt(m.QQ, 10), 1, 1, tid, m.Gtk2)
+	url := fmt.Sprintf(getCommentsURL, strconv.FormatInt(m.QQ, 10), 0, 1, tid, m.Gtk2)
 	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
 		"cookie": m.Cookie,
 	})))
@@ -327,6 +327,7 @@ func (m *Manager) GetLevel1CommentCount(tid string) (cnt int64, err error) {
 		return -1, er
 	}
 	r := cRe.FindStringSubmatch(string(data))
+	//log.Println("空指针异常测试：" + string(data))
 	if len(r) < 2 {
 		er := errors.New("说说评论正则解析错误:" + err.Error())
 		log.Println("说说评论请求失败:", er.Error())

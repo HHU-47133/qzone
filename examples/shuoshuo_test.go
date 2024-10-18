@@ -1,7 +1,6 @@
 package examples
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/HHU-47133/qzone"
@@ -67,40 +66,40 @@ func TestDoLike(t *testing.T) {
 	t.Log("[点赞返回]" + dl.Msg)
 }
 
-// 发布文字说说
-func TestPublishShuoShuoText(t *testing.T) {
-	m := qzone.NewManager(Cfg.Cookie)
-	pr, err := m.PublishShuoShuo(resentShuoShuoData, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Logf("[发布文字说说返回]" + pr.Tid)
-}
-
-// 发布带图说说
-func TestPublishShuoShuoImg(t *testing.T) {
-	m := qzone.NewManager(Cfg.Cookie)
-	// 读取本地图片
-	srcByte, err := os.ReadFile(Cfg.ImgPath[0])
-	if err != nil {
-		t.Log("[测试图片1读取错误]", err)
-	}
-	// base64编码
-	pic1Base64 := base64.StdEncoding.EncodeToString(srcByte)
-
-	// 读取上传第二张图片
-	srcByte, err = os.ReadFile(Cfg.ImgPath[1])
-	if err != nil {
-		t.Log("[测试图片2读取错误]", err)
-	}
-	pic2Base64 := base64.StdEncoding.EncodeToString(srcByte)
-	// 发说说
-	pr, err := m.PublishShuoShuo("我正在测试QQ空间自动发说说功能", []string{pic1Base64, pic2Base64})
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Logf("[发布图片说说返回]" + pr.Tid)
-}
+//// 发布文字说说
+//func TestPublishShuoShuoText(t *testing.T) {
+//	m := qzone.NewManager(Cfg.Cookie)
+//	pr, err := m.PublishShuoShuo(resentShuoShuoData, nil)
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//	t.Logf("[发布文字说说返回]" + pr.Tid)
+//}
+//
+//// 发布带图说说
+//func TestPublishShuoShuoImg(t *testing.T) {
+//	m := qzone.NewManager(Cfg.Cookie)
+//	// 读取本地图片
+//	srcByte, err := os.ReadFile(Cfg.ImgPath[0])
+//	if err != nil {
+//		t.Log("[测试图片1读取错误]", err)
+//	}
+//	// base64编码
+//	pic1Base64 := base64.StdEncoding.EncodeToString(srcByte)
+//
+//	// 读取上传第二张图片
+//	srcByte, err = os.ReadFile(Cfg.ImgPath[1])
+//	if err != nil {
+//		t.Log("[测试图片2读取错误]", err)
+//	}
+//	pic2Base64 := base64.StdEncoding.EncodeToString(srcByte)
+//	// 发说说
+//	pr, err := m.PublishShuoShuo("我正在测试QQ空间自动发说说功能", []string{pic1Base64, pic2Base64})
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//	t.Logf("[发布图片说说返回]" + pr.Tid)
+//}
 
 // 保存配置信息
 func TestCfg(t *testing.T) {

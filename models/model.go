@@ -7,13 +7,13 @@ type ShuoShuoPublishResp struct {
 	Tid      string // 说说Id
 	Code     int64  // 响应状态码，0成功
 	Now      int64  // 发布时间戳
-	Feedinfo string // 说说页面html元素
+	FeedInfo string // 说说页面html元素
 	Message  string // ？错误后返回的消息
 }
 
 // QQGroupReq 获取QQ群请求结构体
 type QQGroupReq struct {
-	Uin     string `json:"uin"`
+	Uin     int64  `json:"uin"`
 	Do      string `json:"do"`
 	Rd      string `json:"rd"`
 	Fupdate string `json:"fupdate"`
@@ -31,11 +31,11 @@ type QQGroupResp struct {
 
 // QQGroupMemberReq QQ群非好友请求结构体
 type QQGroupMemberReq struct {
-	Uin     interface{} `json:"uin"` //QQ
-	Gid     interface{} `json:"gid"` //群号
-	Fupdate string      `json:"fupdate"`
-	Type    string      `json:"type"`
-	GTk     interface{} `json:"g_tk"`
+	Uin     int64  `json:"uin"` //QQ
+	Gid     int64  `json:"gid"` //群号
+	Fupdate string `json:"fupdate"`
+	Type    string `json:"type"`
+	GTk     string `json:"g_tk"`
 }
 
 // QQGroupMemberResp QQ群非好友响应结构体
@@ -54,7 +54,7 @@ type ShuoShuoResp struct {
 	Content     string // 说说内容
 	CreateTime  string // 说说创建时间
 	CreatedTime int64  // 说说创建时间戳
-	Pictotal    int64  // 图片总数
+	PicTotal    int64  // 图片总数
 	Cmtnum      int64  // 评论数量
 	Secret      int64  // 是否为私密动态
 	Pic         []PicResp

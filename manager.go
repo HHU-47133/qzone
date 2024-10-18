@@ -1,10 +1,15 @@
 package qzone
 
 import (
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -31,8 +36,97 @@ const (
 	getQQGroupMemberURL = "https://user.qzone.qq.com/proxy/domain/r.qzone.qq.com/cgi-bin/tfriend/qqgroupfriend_groupinfo.cgi?"
 )
 
-// Ptqrshow 获得登录二维码
-func Ptqrshow() (data []byte, qrsig string, ptqrtoken string, err error) {
+func init() {
+	log.SetFlags(log.Lshortfile | log.Ldate | log.Ltime)
+	log.SetPrefix("[qzone]")
+}
+
+// Manager qq空间信息管理
+type Manager struct {
+	Cookie string
+	QQ     int64
+	Gtk    string
+	Gtk2   string
+	PSkey  string
+	Skey   string
+	Uin    string
+}
+
+// QzoneLogin 扫码登录
+func QzoneLogin(qrCodeOutputPath string, qrCodeInBytes chan []byte, retryNum int64) (m Manager, err error) {
+	index := int64(1)
+Outer:
+	for ; index <= retryNum; index++ {
+		// 1. 获取二维码信息（data），取出cookie重要参数（qrsig、ptqrtoken）
+		data, qrsig, qrtoken, err := qrShow()
+		if err != nil {
+			log.Printf("空间登录失败:%s[%d/%d]", err.Error(), index, retryNum)
+			return Manager{}, err
+		}
+		// 2. 保存二维码
+		if qrCodeOutputPath != "" {
+			err = os.WriteFile(qrCodeOutputPath, data, 0666)
+			if err != nil {
+				log.Printf("空间登录失败:二维码保存错误:%s[%d/%d]", err.Error(), index, retryNum)
+				return Manager{}, err
+			}
+		}
+		// 3. 向通道发送二维码数据
+		if qrCodeInBytes != nil {
+			<-qrCodeInBytes
+			qrCodeInBytes <- data
+		}
+		log.Printf("空间登录尝试中[%d/%d]\n", index, retryNum)
+	Inner:
+		for {
+			//查询扫码结果
+			data, qrloginCookie, err := qrLogin(qrsig, qrtoken)
+			if err != nil {
+				log.Printf("空间登录失败:%s[%d/%d]", err.Error(), index, retryNum)
+				return Manager{}, err
+			}
+			text := string(data)
+			switch {
+			case strings.Contains(text, "二维码未失效"):
+				log.Printf("空间登录二维码已生成，请尽快扫码登录[%d/%d]", index, retryNum)
+			case strings.Contains(text, "二维码认证中"):
+				log.Printf("空间登录二维码已扫描，请点击确认[%d/%d]", index, retryNum)
+			case strings.Contains(text, "二维码已失效") || strings.Contains(text, "本次登录已被拒绝"):
+				if index <= retryNum-1 {
+					log.Printf("空间登录二维码已失效,即将重新生成[%d/%d]", index, retryNum)
+				}
+				break Inner
+			case strings.Contains(text, "登录成功"):
+				_ = os.Remove(qrCodeOutputPath)
+				dealedCheckText := strings.ReplaceAll(text, "'", "")
+				redirectURL := strings.Split(dealedCheckText, ",")[2]
+				// 4. 成功登录后，获取登录重定向URL
+				redirectCookie, err := loginRedirect(redirectURL)
+				if err != nil {
+					log.Printf("空间登录失败:%s[%d/%d]", err.Error(), index, retryNum)
+					return Manager{}, err
+				}
+				cookie := qrloginCookie + redirectCookie
+				// 创建信息管理结构，携带登录回调cookie和重定向页面cookie
+				m = NewManager(cookie)
+				log.Printf("空间登录成功[%d/%d]", index, retryNum)
+				break Outer
+			}
+			time.Sleep(2 * time.Second)
+		}
+
+	}
+	if index > retryNum {
+		err := errors.New("已尝试最大次数")
+		log.Printf("空间登录失败:%s[%d/%d]", err.Error(), retryNum, retryNum)
+		return Manager{}, err
+	}
+	return m, nil
+}
+
+// qrShow 获得登录二维码
+func qrShow() (data []byte, qrsig string, qrtoken string, err error) {
+	cookiesString := ""
 	data, err = DialRequest(NewRequest(
 		WithUrl(ptqrshowURL),
 		WithClient(&http.Client{CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
@@ -40,21 +134,27 @@ func Ptqrshow() (data []byte, qrsig string, ptqrtoken string, err error) {
 		}}),
 		WithRespFunc(func(response *http.Response) {
 			for _, v := range response.Cookies() {
+				cookiesString = cookiesString + v.String()
 				if v.Name == "qrsig" {
 					qrsig = v.Value
 					break
 				}
 			}
 		})))
-	if qrsig == "" {
-		return
+	if err != nil {
+		er := errors.New("空间登录二维码显示错误:" + string(data))
+		return nil, "", "", er
 	}
-	ptqrtoken = genderGTK(qrsig, 0)
+	if qrsig == "" {
+		er := errors.New("空间登录二维码cookie获取错误:" + cookiesString)
+		return nil, "", "", er
+	}
+	qrtoken = genderGTK(qrsig, 0)
 	return
 }
 
-// Ptqrlogin 登录回调
-func Ptqrlogin(qrsig string, qrtoken string) (data []byte, cookie string, err error) {
+// qrLogin 登录状态检测
+func qrLogin(qrsig string, qrtoken string) (data []byte, cookie string, err error) {
 	urls := fmt.Sprintf(ptqrloginURL, qrtoken)
 	data, err = DialRequest(NewRequest(
 		WithUrl(urls),
@@ -71,18 +171,22 @@ func Ptqrlogin(qrsig string, qrtoken string) (data []byte, cookie string, err er
 				}
 			}
 		})))
+	if err != nil {
+		er := errors.New("空间登录状态检测错误:" + err.Error())
+		return nil, "", er
+	}
 	return
 }
 
-// LoginRedirect 登录成功回调
-func LoginRedirect(redirectURL string) (cookie string, err error) {
+// loginRedirect 登录成功回调
+func loginRedirect(redirectURL string) (cookie string, err error) {
 	u, err := url.Parse(redirectURL)
 	if err != nil {
-		return
+		return "", errors.New("空间登录重定向链接解析错误:" + err.Error())
 	}
 	values, err := url.ParseQuery(u.RawQuery)
 	if err != nil {
-		return
+		return "", errors.New("空间登录重定向链接查询参数解析错误:" + err.Error())
 	}
 
 	urls := fmt.Sprintf(checkSigURL, values["uin"][0], values["ptsigx"][0])
@@ -98,18 +202,10 @@ func LoginRedirect(redirectURL string) (cookie string, err error) {
 				}
 			}
 		})))
+	if err != nil {
+		return "", errors.New("空间登录重定向链接请求错误:" + err.Error())
+	}
 	return
-}
-
-// Manager qq空间信息管理
-type Manager struct {
-	Cookie string
-	QQ     string
-	Gtk    string
-	Gtk2   string
-	PSkey  string
-	Skey   string
-	Uin    string
 }
 
 // NewManager 初始化信息
@@ -130,7 +226,11 @@ func NewManager(cookie string) (m Manager) {
 	}
 	m.Gtk = genderGTK(m.Skey, 5381)
 	m.Gtk2 = genderGTK(m.PSkey, 5381)
-	m.QQ = strings.TrimPrefix(m.Uin, "o")
+	t, err := strconv.ParseInt(strings.TrimPrefix(m.Uin, "o"), 10, 64)
+	if err != nil {
+		log.Fatal(err)
+	}
+	m.QQ = t
 	m.Cookie = cookie
 	return
 }

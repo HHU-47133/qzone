@@ -2,122 +2,78 @@
 
 > 提供qq空间基础功能接口
 
-
 - 导入项目
-
 ```go
 go get -u github.com/HHU-47133/qzone
 ```
-
-
 ## 功能接口
-
+- 具体实现请参看 `examples/*_test.go`
+- 管理类实现 `manager.go`; 接口实现 `api.go`
 ### 登录
-
-- 详见 `examples/login_test.go`
-
 ```go
-// 1. 获取二维码信息（data），取出cookie重要参数（qrsig、ptqrtoken）
-data, qrsig, ptqrtoken, err = Ptqrshow()
-// 2. 保存二维码
-err = os.WriteFile("ptqrcode.png", data, 0666)
-// 3. 查询登录回调，检测登录状态
-for {
-    data, ptqrloginCookie, err = Ptqrlogin(qrsig, ptqrtoken)
-	...
-	// 4. 成功登录后，获取登录重定向URL
-    redirectCookie, err = LoginRedirect(redirectURL)
-}
-// 5. 创建信息管理结构，携带登录回调cookie和重定向页面cookie
-m := NewManager(ptqrloginCookie + redirectCookie)
-// 6. 执行其它接口操作
-...
+// qrCodeOutputPath:二维码输出路径,例："./1.png"
+// qrCodeInBytes:二维码字节流输出通道,向有缓冲区的通道发送最新字节流数据
+// retryNum:尝试扫码登录的最大次数
+func QzoneLogin(qrCodeOutputPath string, qrCodeInBytes chan []byte, retryNum int64) (m Manager, err error)
 ```
-
-### 发布说说
-
+### 好友、群相关
+- 群列表获取
 ```go
-// PublishShuoShuo(content string, base64imgList []string)
-// content：说说内容
-// base64imgList：base64编码图片列表
-ShuoShuoPublishResp, err = m.PublishShuoShuo("content", []string{picBase64})
+func (m *Manager) QQGroupList() ([]*models.QQGroupResp, error)
 ```
-
-### 获取用户所有说说
-
+- 群友(非好友)获取
 ```go
-// ShuoShuoList(uin string, num int, replynum int)
-// uin：QQ号
-// num：说说数量
-// replynum：评论数量
-ShuoShuoResp, err = m.ShuoShuoList(m.QQ, 20, 5)
+func (m *Manager) FriendList() ([]*models.FriendInfoEasyResp, error)
 ```
-
-### 获取说说所有一级评论
-
+- 好友详细信息获取
 ```go
-// GetShuoShuoComments(tid string)
-// tid：说说ID
-comments, err := m.GetShuoShuoComments("4844244d9011f866f3d90500")
+// uin:本人QQ
+func (m *Manager) FriendInfoDetail(uin int64) (*models.FriendInfoDetailResp, error)
 ```
-
-### 单个说说URL
-
+### 说说相关
+- 说说发布
+```go
+// content:文本内容
+// base64imgList:图片数组,为nil则只发文字
+func (m *Manager) PublishShuoShuo(content string, base64imgList []string) (*models.ShuoShuoPublishResp, error)
+```
+- 说说获取
+```go
+// uin:有访问权限的QQ
+// num:获取说说个数
+// ms:延迟访问毫秒
+func (m *Manager) ShuoShuoList(uin int64, num int64, ms int64) (ShuoShuo []*models.ShuoShuoResp, err error)
+```
+- 说说总数获取
+```go
+// uin:有访问权限的QQ
+// 实际能访问的说说数量<=说说总数(封存动态)
+func (m *Manager) GetShuoShuoCount(uin int64) (cnt int64, err error)
+```
+- 说说一级评论总数
+```go
+// tid:说说id
+func (m *Manager) GetLevel1CommentCount(tid string) (cnt int64, err error)
+```
+- 说说评论内容获取
+```go
+// tid:说说id
+// num:评论上限
+// ms:延迟访问毫秒
+func (m *Manager) ShuoShuoCommentList(tid string, num int64, ms int64) 
+```
+- 最新说说获取
+```go
+// uin:有访问权限的QQ
+func (m *Manager) GetLatestShuoShuo(uin int64) (*models.ShuoShuoResp, error)
+```
+### 其他
+- 单个说说地址
 ```go
 "https://user.qzone.qq.com/"+QQ号+"/mood/"+说说tid
 ```
 
 
-### 上传图片
-
-```go
-// 1. 读取本地图片
-srcByte, err = os.ReadFile(path)
-// 2. base64编码
-picBase64 = base64.StdEncoding.EncodeToString(srcByte)
-// 3. 上传图片 
-UploadImageResp, err = m.UploadImage(picBase64)
-```
-
-
-### 获取好友信息
-
-- 接口限制，只能获取亲密度排序前200的好友
-- 简略信息
-
-```go
-FriendInfoEasyResp, err = m.FriendList()
-```
-
-
-### 获取好友详细信息
-
-```go
-// FriendInfoDetail(uin int64)
-// uin：好友QQ号
-FriendInfoDetailResp, err = m.FriendInfoDetail(friend.uin)
-```
-
-### 说说点赞
-
-```go
-// DoLike(tid string)
-// tid：说说ID
-LikeResp, err = m.DoLike(shuoshuo.tid)
-```
-
-### 获取QQ群
-```go
-// GetQQGroup()
-groups, err := m.GetQQGroup()
-```
-### 获取QQ群非好友
-```go
-// GetQQGroupMember(gid int64) 
-// gid:群号
-groupMember, err := m.GetQQGroupMember(975807068)
-```
-
-## model 
+### model 
 
 - 请求响应结构，简洁信息参考 `model.go` 文件，详细信息参考 `types.go` 文件

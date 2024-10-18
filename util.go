@@ -28,7 +28,14 @@ func structToStr(in interface{}) (payload string) {
 		field := t.Field(i)
 		get := field.Tag.Get("json")
 		if get != "" {
-			keys = append(keys, get+"="+url.QueryEscape(v.Field(i).Interface().(string)))
+			var t string
+			if v.Field(i).Kind() == reflect.Int64 {
+				t = strconv.FormatInt(v.Field(i).Int(), 10)
+			} else {
+				t = v.Field(i).Interface().(string)
+			}
+
+			keys = append(keys, get+"="+url.QueryEscape(t))
 		}
 	}
 	payload = strings.Join(keys, "&")

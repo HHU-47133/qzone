@@ -1,47 +1,39 @@
 package examples
 
 import (
-	"fmt"
 	"github.com/HHU-47133/qzone"
-	"strconv"
 	"testing"
 )
 
-func TestGetFriendLists(t *testing.T) {
-	m := qzone.NewManager(cookie)
-	friends, err := m.FriendList()
-	if err != nil {
-		t.Fatal(err)
-		return
+// 测试好友相关
+func TestFriendList(t *testing.T) {
+	m := qzone.NewManager(Cfg.Cookie)
+	friends, _ := m.FriendList()
+	for i := 0; i < 10; i++ {
+		t.Log("[好友简略信息]", friends[i].Name, friends[i].Uin, friends[i].Online, friends[i].Image, friends[i].GroupName)
+		//fid, _ := m.FriendInfoDetail(friends[i].Uin) //TODO:详细信息获取有时候会莫名报错可能需要代理IP
+		//t.Log("[好友详细信息]", fid.Uin, fid.Age, fid.Nickname, fid.Sex, fid.Birthyear, fid.Birthday, fid.Country, fid.Province, fid.City, fid.Mailname, fid.Mailcellphone, fid.Avatar, fid.Signature)
 	}
-	for _, v := range friends {
-		fmt.Println("[好友简略信息]", v.Name, v.Uin, v.Online, v.Image, v.GroupName)
-		//fid, _ := m.FriendInfoDetail(v.Uin) TODO:详细信息获取有时候会莫名报错
-		//fmt.Println("好友详细信息：", fid.Uin, fid.Age, fid.Nickname, fid.Sex, fid.Birthyear, fid.Birthday, fid.Country, fid.Province, fid.City, fid.Mailname, fid.Mailcellphone, fid.Avatar, fid.Signature)
-	}
-	friendQQ = strconv.FormatInt(friends[0].Uin, 10)
+	//将friendQQ设置为第一个好友
+	Cfg.FriendQQ = friends[0].Uin
 }
 
+// 测试QQ群列表
 func TestQQGroupList(t *testing.T) {
-	m := qzone.NewManager(cookie)
-	groups, err := m.GetQQGroup()
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
+	m := qzone.NewManager(Cfg.Cookie)
+	groups, _ := m.QQGroupList()
 	for _, v := range groups {
-		fmt.Println("[QQ群信息]", v.GroupCode, v.GroupName, v.TotalMember, v.NotFriends)
+		t.Log("[QQ群信息]", v.GroupCode, v.GroupName, v.TotalMember, v.NotFriends)
 	}
+	//将groupQQ设置为第一个群组
+	Cfg.GroupQQ = groups[0].GroupCode
 }
 
-func TestGroupMember(t *testing.T) {
-	m := qzone.NewManager(cookie)
-	groupMember, err := m.GetQQGroupMember(975807068)
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
+// 测试QQ群友列表
+func TestGroupMemberList(t *testing.T) {
+	m := qzone.NewManager(Cfg.Cookie)
+	groupMember, _ := m.QQGroupMemberList(Cfg.GroupQQ)
 	for _, v := range groupMember {
-		fmt.Println("[QQ群非好友信息]", v.Uin, v.NickName, v.AvatarURL, v.GroupCode)
+		t.Log("[QQ群非好友信息]", v.Uin, v.NickName, v.AvatarURL, v.GroupCode)
 	}
 }

@@ -1,63 +1,38 @@
 package examples
 
 import (
-	"fmt"
+	"encoding/json"
 	"github.com/HHU-47133/qzone"
 	"os"
-	"strings"
 	"testing"
-	"time"
 )
 
-var (
-	QrcodeName = "ptqrcode.png"
-)
+type Config struct {
+	Cookie   string   `json:"cookie"`
+	Tid      string   `json:"tid"`
+	FriendQQ int64    `json:"friendQQ"`
+	GroupQQ  int64    `json:"groupQQ"`
+	ImgPath  []string `json:"imgPath"`
+}
+
+var Cfg Config
 
 // 登录测试
 func TestLogin(t *testing.T) {
-	var m qzone.Manager
-	// 1. 获取二维码信息（data），取出cookie重要参数（qrsig、ptqrtoken）
-	data, qrsig, ptqrtoken, err := qzone.Ptqrshow()
+	// 读取测试配置文件
+	data, err := os.ReadFile("config.json")
+	if err != nil {
+		t.Fatal("读取json配置失败:", err)
+	}
+	// 调用登录接口
+	m, err := qzone.QzoneLogin("qrcode.png", nil, 2)
+	if err != nil {
+		t.Fatal(err)
+		t.Skip("[登录失败]请重新开启测试")
+	}
+	err = json.Unmarshal(data, &Cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// 2. 保存二维码
-	err = os.WriteFile(QrcodeName, data, 0666)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// 3. 查询登录回调，检测登录状态
-LOOP:
-	for {
-		data, ptqrloginCookie, err := qzone.Ptqrlogin(qrsig, ptqrtoken)
-		if err != nil {
-			t.Fatal(err)
-		}
-		text := string(data)
-		fmt.Printf("%#v\n", text)
-		switch {
-		case strings.Contains(text, "二维码已失效"):
-			t.Fatal("二维码已失效, 登录失败")
-			return
-		case strings.Contains(text, "登录成功"):
-			_ = os.Remove(QrcodeName)
-			dealedCheckText := strings.ReplaceAll(text, "'", "")
-			redirectURL := strings.Split(dealedCheckText, ",")[2]
-			// 4. 成功登录后，获取登录重定向URL
-			redirectCookie, err := qzone.LoginRedirect(redirectURL)
-			if err != nil {
-				t.Fatal(err)
-			}
-			// 5. 创建信息管理结构，携带登录回调cookie和重定向页面cookie
-			m = qzone.NewManager(ptqrloginCookie + redirectCookie)
-			cookie = ptqrloginCookie + redirectCookie
-			t.Log("cookie: ", cookie)
-			break LOOP
-		}
-		time.Sleep(2 * time.Second)
-	}
-
-	// 6. 执行其它接口操作
-	fmt.Println(m.Uin, m.QQ, m.Gtk2, m.Cookie)
-	//m.GetLikeListRaw("3386013275", "5b76d2c933d50467f2d50e00", 60, 1)
+	Cfg.Cookie = m.Cookie
 }

@@ -21,9 +21,13 @@ func QzoneLogin(qrCodeOutputPath string, qrCodeInBytes chan []byte, retryNum int
 ```go
 func (m *Manager) QQGroupList() ([]*models.QQGroupResp, error)
 ```
-- 群友(非好友)获取
+- 好友获取
 ```go
 func (m *Manager) FriendList() ([]*models.FriendInfoEasyResp, error)
+```
+- 群友(非好友)获取
+```go
+func (m *Manager) QQGroupMemberList(gid int64) ([]*models.QQGroupMemberResp, error)
 ```
 - 好友详细信息获取
 ```go
@@ -52,12 +56,12 @@ func (m *Manager) GetShuoShuoCount(uin int64) (cnt int64, err error)
 ```
 - 说说一级评论总数
 ```go
-// tid:说说id
+// tid:说说id（限制本人）
 func (m *Manager) GetLevel1CommentCount(tid string) (cnt int64, err error)
 ```
 - 说说评论内容获取
 ```go
-// tid:说说id
+// tid:说说id（限制本人）
 // num:评论上限
 // ms:延迟访问毫秒
 func (m *Manager) ShuoShuoCommentList(tid string, num int64, ms int64) 

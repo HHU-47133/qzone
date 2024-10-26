@@ -259,25 +259,39 @@ func (m *Manager) PublishShuoShuo(content string, base64imgList []string) (*mode
 	return ssp, nil
 }
 
-// ShuoShuoList 获取所有说说 实际能访问的说说个数 <= 说说总数(空间仅展示近半年等情况)
+// ShuoShuoList 获取所有说说 实际能访问的说说个数 <= 说说总数(空间仅展示近半年等情况) (有空间访问权限即可)
 func (m *Manager) ShuoShuoList(uin int64, num int64, ms int64) (ShuoShuo []*models.ShuoShuoResp, err error) {
 	cnt := num
 	t := int(math.Ceil(float64(cnt) / 20.0))
 	var i int
+	//获取最大数量，控制i的取值
+	maxCnt, err := m.GetShuoShuoCount(uin)
+	if err != nil {
+		log.Println("说说获取失败:", err.Error())
+		return nil, err
+	}
 	for range t {
+		if i >= int(maxCnt) {
+			break
+		}
 		ShuoShuoTemp, err := m.shuoShuoListRaw(uin, 20, i, 0)
 		if err != nil {
 			log.Println("所有说说获取失败:", err.Error())
 			return nil, err
 		}
-		ShuoShuo = append(ShuoShuo, ShuoShuoTemp...)
-		i = i + 20
-		time.Sleep(time.Millisecond * time.Duration(ms))
+		if len(ShuoShuoTemp) == 0 {
+			break
+		}
+		if len(ShuoShuo) < int(cnt) {
+			ShuoShuo = append(ShuoShuo, ShuoShuoTemp[0:min(len(ShuoShuoTemp), int(cnt)-len(ShuoShuo))]...)
+			i = i + 20
+			time.Sleep(time.Millisecond * time.Duration(ms))
+		}
 	}
 	return ShuoShuo, nil
 }
 
-// GetShuoShuoCount 获取用户QQ号为uin的说说总数
+// GetShuoShuoCount 获取用户QQ号为uin的说说总数（有空间访问权限即可）
 func (m *Manager) GetShuoShuoCount(uin int64) (cnt int64, err error) {
 	mlr := models.MsgListRequest{
 		Uin:                uin,
@@ -315,7 +329,7 @@ func (m *Manager) GetShuoShuoCount(uin int64) (cnt int64, err error) {
 	return cnt, nil
 }
 
-// GetLevel1CommentCount 获取一级评论总数
+// GetLevel1CommentCount 获取一级评论总数(限制本人)
 func (m *Manager) GetLevel1CommentCount(tid string) (cnt int64, err error) {
 	url := fmt.Sprintf(getCommentsURL, strconv.FormatInt(m.QQ, 10), 0, 1, tid, m.Gtk2)
 	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
@@ -340,24 +354,40 @@ func (m *Manager) GetLevel1CommentCount(tid string) (cnt int64, err error) {
 	return numOfComments, nil
 }
 
-// ShuoShuoCommentList 根据说说ID获取评论，仅限本用户（m.QQ） // TODO: 待测试
+// ShuoShuoCommentList 根据说说ID获取评论（限制本人）
 func (m *Manager) ShuoShuoCommentList(tid string, num int64, ms int64) (comments []*models.Comment, err error) {
 	numOfComments := num
 	t := int(math.Ceil(float64(numOfComments) / 20.0))
+	//获取最大数量，控制i的取值
+	maxCnt, err := m.GetLevel1CommentCount(tid)
+	if err != nil {
+		log.Println("说说评论获取失败:", err.Error())
+		return nil, err
+	}
 	var i int
 	for range t {
+		if i >= int(maxCnt) {
+			break
+		}
 		commentsTemp, err := m.shuoShuoCommentsRaw(20, i, tid)
 		if err != nil {
+			log.Println("说说评论获取失败:", err.Error())
 			return nil, err
 		}
-		comments = append(comments, commentsTemp...)
-		i = i + 20
-		time.Sleep(time.Millisecond * time.Duration(ms))
+		if len(commentsTemp) == 0 {
+			break
+		}
+		if len(comments) < int(num) {
+			comments = append(comments, commentsTemp[0:min(len(commentsTemp), int(num)-len(comments))]...)
+			i = i + 20
+			time.Sleep(time.Millisecond * time.Duration(ms))
+		}
+
 	}
 	return comments, nil
 }
 
-// GetLatestShuoShuo 获取用户QQ号为uin的最新说说
+// GetLatestShuoShuo 获取用户QQ号为uin的最新说说（有空间访问权限即可）
 func (m *Manager) GetLatestShuoShuo(uin int64) (*models.ShuoShuoResp, error) {
 	ss, err := m.shuoShuoListRaw(uin, 1, 0, 0)
 	fmt.Println("ss!!!!!!:", ss)

@@ -125,7 +125,7 @@ func (m *Manager) getPicBoAndRichval(data *models.UploadImageResp) (picBo, richv
 	return
 }
 
-// ShuoShuoListRaw 获取用户QQ号为uin且最多num个说说列表，每个说说获取上限replynum个评论数量 TODO:replynum无效果，说说评论展示条数和num绑定
+// ShuoShuoListRaw 获取用户QQ号为uin且最多num个说说列表，每个说说获取上限replynum个评论数量
 func (m *Manager) shuoShuoListRaw(uin int64, num int, pos int, replynum int) ([]*models.ShuoShuoResp, error) {
 	mlr := models.MsgListRequest{
 		Uin:                uin,

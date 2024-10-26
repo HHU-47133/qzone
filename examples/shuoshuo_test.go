@@ -14,7 +14,7 @@ var resentShuoShuoData string
 // 获取最新说说
 func TestGetLatestShuoShuo(t *testing.T) {
 	m := qzone.NewManager(Cfg.Cookie)
-	ss, err := m.GetLatestShuoShuo(m.QQ)
+	ss, err := m.GetLatestShuoShuo(1294222408)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -25,7 +25,7 @@ func TestGetLatestShuoShuo(t *testing.T) {
 // 获取说说总数
 func TestGetShuoShuoCount(t *testing.T) {
 	m := qzone.NewManager(Cfg.Cookie)
-	cnt, err := m.GetShuoShuoCount(m.QQ)
+	cnt, err := m.GetShuoShuoCount(1294222408)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +33,19 @@ func TestGetShuoShuoCount(t *testing.T) {
 	t.Log("[说说总数获取成功]" + strconv.FormatInt(cnt, 10))
 }
 
+// 获取指定个数的说说
+func TestShuoShuoList(t *testing.T) {
+	Cfg.Tid = "4844244d1b6412672d190b00"
+	m := qzone.NewManager(Cfg.Cookie)
+	cnt := int64(3)
+	shuoshuos, _ := m.ShuoShuoList(1294222408, cnt, 1000)
+	for i, shuo := range shuoshuos {
+		t.Logf("[获取到说说][%d/%d]:%s", i, cnt, shuo.Content)
+	}
+}
+
 // 获取指定说说一级评论总数
+// @{uin:2546229294,nick:爱莉希雅的,who:1}
 func TestGetLevel1CommentCount(t *testing.T) {
 	m := qzone.NewManager(Cfg.Cookie)
 	cnt, err := m.GetLevel1CommentCount(Cfg.Tid)
@@ -46,25 +58,27 @@ func TestGetLevel1CommentCount(t *testing.T) {
 
 // 获取指定说说所有的一级评论
 func TestShuoShuoCommentList(t *testing.T) {
+	Cfg.Tid = "4844244d1b6412672d190b00"
 	m := qzone.NewManager(Cfg.Cookie)
-	cnt := int64(3)
+	cnt, _ := m.GetLevel1CommentCount("4844244d1b6412672d190b00")
+	cnt = int64(90)
 	comments, _ := m.ShuoShuoCommentList(Cfg.Tid, cnt, 1000)
 	resentShuoShuoData = resentShuoShuoData + "\n上条评论人是:"
 	for i, comment := range comments {
 		resentShuoShuoData = resentShuoShuoData + comment.OwnerName + " "
-		t.Logf("[获取到说说评论][%d/%d]:%s %d %s %s", i, cnt, comment.OwnerName, comment.OwnerUin, comment.Content, comment.CreateTime)
+		t.Logf("[获取到说说评论][%d/%d]:%s %d %s %s", i, cnt, comment.OwnerName, comment.OwnerUin, comment.Content, comment.PicContent)
 	}
 }
 
 // 点赞说说
-func TestDoLike(t *testing.T) {
-	m := qzone.NewManager(Cfg.Cookie)
-	dl, err := m.DoLike(Cfg.Tid)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("[点赞返回]" + dl.Msg)
-}
+//func TestDoLike(t *testing.T) {
+//	m := qzone.NewManager(Cfg.Cookie)
+//	dl, err := m.DoLike(Cfg.Tid)
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//	t.Log("[点赞返回]" + dl.Msg)
+//}
 
 //// 发布文字说说
 //func TestPublishShuoShuoText(t *testing.T) {

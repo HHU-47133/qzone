@@ -54,6 +54,7 @@ type Manager struct {
 
 // QzoneLogin 扫码登录
 func QzoneLogin(qrCodeOutputPath string, qrCodeInBytes chan []byte, retryNum int64) (m Manager, err error) {
+	defer close(qrCodeInBytes)
 	index := int64(1)
 Outer:
 	for ; index <= retryNum; index++ {
@@ -73,9 +74,14 @@ Outer:
 		}
 		// 3. 向通道发送二维码数据
 		if qrCodeInBytes != nil {
-			<-qrCodeInBytes
-			qrCodeInBytes <- data
+			select {
+			case <-qrCodeInBytes:
+				qrCodeInBytes <- data
+			default:
+				qrCodeInBytes <- data
+			}
 		}
+
 		log.Printf("空间登录尝试中[%d/%d]\n", index, retryNum)
 	Inner:
 		for {

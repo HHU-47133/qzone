@@ -1,38 +1,40 @@
 package examples
 
 import (
-	"encoding/json"
+	"encoding/base64"
 	"github.com/HHU-47133/qzone"
 	"os"
 	"testing"
+	"time"
 )
 
-type Config struct {
-	Cookie   string   `json:"cookie"`
-	Tid      string   `json:"tid"`
-	FriendQQ int64    `json:"friendQQ"`
-	GroupQQ  int64    `json:"groupQQ"`
-	ImgPath  []string `json:"imgPath"`
-}
-
-var Cfg Config
+var (
+	qm       = qzone.NewQManager()
+	qrID     string
+	b64s     string
+	groupID  int64
+	friendID int64
+	tid      string
+	imgPath  = [2]string{"./1.png", "./2.png"}
+)
 
 // 登录测试
 func TestLogin(t *testing.T) {
 	// 读取测试配置文件
-	data, err := os.ReadFile("config.json")
-	if err != nil {
-		t.Fatal("读取json配置失败:", err)
+	// 给一个userID用于获取二维码，成功返回base64数据和二维码id
+	b64s, qrID, _ = qm.GenerateQRCode("test-uid")
+	ddd, _ := base64.StdEncoding.DecodeString(b64s) //成图片文件并把文件写入到buffer
+	_ = os.WriteFile("./qrcode.png", ddd, 0666)
+	for {
+		status, err := qm.CheckQRCodeStatus(qrID, "test-uid")
+		if err != nil {
+			return
+		}
+		if status == 0 {
+			break
+		}
+		t.Log("登录状态:", status)
+		time.Sleep(2 * time.Second)
 	}
-	// 调用登录接口
-	m, err := qzone.QzoneLogin("qrcode.png", nil, 2)
-	if err != nil {
-		t.Fatal(err)
-		t.Skip("[登录失败]请重新开启测试")
-	}
-	err = json.Unmarshal(data, &Cfg)
-	if err != nil {
-		t.Fatal(err)
-	}
-	Cfg.Cookie = m.Cookie
+
 }

@@ -12,7 +12,7 @@ import (
 )
 
 // GetShuoShuoCommentsRaw 从第pos条评论开始获取num条评论，num最大为20
-func (m *Manager) shuoShuoCommentsRaw(num int, pos int, tid string) (comments []*models.Comment, err error) {
+func (m *Qpack) shuoShuoCommentsRaw(num int, pos int, tid string) (comments []*models.Comment, err error) {
 	url := fmt.Sprintf(getCommentsURL, strconv.FormatInt(m.QQ, 10), pos, num, tid, m.Gtk2)
 	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
 		"cookie": m.Cookie,
@@ -51,7 +51,7 @@ func (m *Manager) shuoShuoCommentsRaw(num int, pos int, tid string) (comments []
 }
 
 // UploadImage 上传图片
-func (m *Manager) uploadImage(base64img string) (*models.UploadImageResp, error) {
+func (m *Qpack) uploadImage(base64img string) (*models.UploadImageResp, error) {
 	uir := models.UploadImageRequest{
 		Filename:      "filename",
 		Uin:           m.QQ,
@@ -110,7 +110,7 @@ func (m *Manager) uploadImage(base64img string) (*models.UploadImageResp, error)
 }
 
 // getPicBoAndRichval 获取已上传图片重要信息
-func (m *Manager) getPicBoAndRichval(data *models.UploadImageResp) (picBo, richval string, err error) {
+func (m *Qpack) getPicBoAndRichval(data *models.UploadImageResp) (picBo, richval string, err error) {
 	var flag bool
 	if data.Ret != 0 {
 		err = errors.New("已上传图片信息错误:fuck")
@@ -126,7 +126,7 @@ func (m *Manager) getPicBoAndRichval(data *models.UploadImageResp) (picBo, richv
 }
 
 // ShuoShuoListRaw 获取用户QQ号为uin且最多num个说说列表，每个说说获取上限replynum个评论数量
-func (m *Manager) shuoShuoListRaw(uin int64, num int, pos int, replynum int) ([]*models.ShuoShuoResp, error) {
+func (m *Qpack) shuoShuoListRaw(uin int64, num int, pos int, replynum int) ([]*models.ShuoShuoResp, error) {
 	mlr := models.MsgListRequest{
 		Uin:                uin,
 		Ftype:              "0",

@@ -23,7 +23,7 @@ var (
 )
 
 // QQGroupList 群列表获取
-func (m *Manager) QQGroupList() ([]*models.QQGroupResp, error) {
+func (m *Qpack) QQGroupList() ([]*models.QQGroupResp, error) {
 	gr := &models.QQGroupReq{
 		Uin:     m.QQ,
 		Do:      "1",
@@ -67,7 +67,7 @@ func (m *Manager) QQGroupList() ([]*models.QQGroupResp, error) {
 }
 
 // QQGroupMemberList 群友(非好友)列表获取
-func (m *Manager) QQGroupMemberList(gid int64) ([]*models.QQGroupMemberResp, error) {
+func (m *Qpack) QQGroupMemberList(gid int64) ([]*models.QQGroupMemberResp, error) {
 	gmr := &models.QQGroupMemberReq{
 		Uin:     m.QQ,
 		Gid:     gid,
@@ -110,7 +110,7 @@ func (m *Manager) QQGroupMemberList(gid int64) ([]*models.QQGroupMemberResp, err
 }
 
 // FriendList 好友列表获取 TODO:有时候显示亲密度前200好友
-func (m *Manager) FriendList() ([]*models.FriendInfoEasyResp, error) {
+func (m *Qpack) FriendList() ([]*models.FriendInfoEasyResp, error) {
 	url := fmt.Sprintf(friendURL, m.Gtk2) + "&uin=" + strconv.FormatInt(m.QQ, 10)
 	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
 		"referer": userQzoneURL,
@@ -155,7 +155,7 @@ func (m *Manager) FriendList() ([]*models.FriendInfoEasyResp, error) {
 }
 
 // FriendInfoDetail 好友详细信息获取
-func (m *Manager) FriendInfoDetail(uin int64) (*models.FriendInfoDetailResp, error) {
+func (m *Qpack) FriendInfoDetail(uin int64) (*models.FriendInfoDetailResp, error) {
 	url := fmt.Sprintf(detailFriendURL, m.Gtk2) + "&uin=" + strconv.FormatUint(uint64(uin), 10)
 	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
 		"referer": userQzoneURL,
@@ -185,7 +185,7 @@ func (m *Manager) FriendInfoDetail(uin int64) (*models.FriendInfoDetailResp, err
 }
 
 // PublishShuoShuo 发布说说，content文本内容，base64imgList图片数组
-func (m *Manager) PublishShuoShuo(content string, base64imgList []string) (*models.ShuoShuoPublishResp, error) {
+func (m *Qpack) PublishShuoShuo(content string, base64imgList []string) (*models.ShuoShuoPublishResp, error) {
 	var (
 		uir         *models.UploadImageResp
 		err         error
@@ -260,7 +260,7 @@ func (m *Manager) PublishShuoShuo(content string, base64imgList []string) (*mode
 }
 
 // ShuoShuoList 获取所有说说 实际能访问的说说个数 <= 说说总数(空间仅展示近半年等情况) (有空间访问权限即可)
-func (m *Manager) ShuoShuoList(uin int64, num int64, ms int64) (ShuoShuo []*models.ShuoShuoResp, err error) {
+func (m *Qpack) ShuoShuoList(uin int64, num int64, ms int64) (ShuoShuo []*models.ShuoShuoResp, err error) {
 	cnt := num
 	t := int(math.Ceil(float64(cnt) / 20.0))
 	var i int
@@ -292,7 +292,7 @@ func (m *Manager) ShuoShuoList(uin int64, num int64, ms int64) (ShuoShuo []*mode
 }
 
 // GetShuoShuoCount 获取用户QQ号为uin的说说总数（有空间访问权限即可）
-func (m *Manager) GetShuoShuoCount(uin int64) (cnt int64, err error) {
+func (m *Qpack) GetShuoShuoCount(uin int64) (cnt int64, err error) {
 	mlr := models.MsgListRequest{
 		Uin:                uin,
 		Ftype:              "0",
@@ -330,7 +330,7 @@ func (m *Manager) GetShuoShuoCount(uin int64) (cnt int64, err error) {
 }
 
 // GetLevel1CommentCount 获取一级评论总数(限制本人)
-func (m *Manager) GetLevel1CommentCount(tid string) (cnt int64, err error) {
+func (m *Qpack) GetLevel1CommentCount(tid string) (cnt int64, err error) {
 	url := fmt.Sprintf(getCommentsURL, strconv.FormatInt(m.QQ, 10), 0, 1, tid, m.Gtk2)
 	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
 		"cookie": m.Cookie,
@@ -355,7 +355,7 @@ func (m *Manager) GetLevel1CommentCount(tid string) (cnt int64, err error) {
 }
 
 // ShuoShuoCommentList 根据说说ID获取评论（限制本人）
-func (m *Manager) ShuoShuoCommentList(tid string, num int64, ms int64) (comments []*models.Comment, err error) {
+func (m *Qpack) ShuoShuoCommentList(tid string, num int64, ms int64) (comments []*models.Comment, err error) {
 	numOfComments := num
 	t := int(math.Ceil(float64(numOfComments) / 20.0))
 	//获取最大数量，控制i的取值
@@ -388,7 +388,7 @@ func (m *Manager) ShuoShuoCommentList(tid string, num int64, ms int64) (comments
 }
 
 // GetLatestShuoShuo 获取用户QQ号为uin的最新说说（有空间访问权限即可）
-func (m *Manager) GetLatestShuoShuo(uin int64) (*models.ShuoShuoResp, error) {
+func (m *Qpack) GetLatestShuoShuo(uin int64) (*models.ShuoShuoResp, error) {
 	ss, err := m.shuoShuoListRaw(uin, 1, 0, 0)
 	fmt.Println("ss!!!!!!:", ss)
 	if err != nil {
@@ -400,7 +400,7 @@ func (m *Manager) GetLatestShuoShuo(uin int64) (*models.ShuoShuoResp, error) {
 }
 
 // DoLike 说说空间点赞 TODO:疑似无效
-func (m *Manager) DoLike(tid string) (*models.LikeResp, error) {
+func (m *Qpack) DoLike(tid string) (*models.LikeResp, error) {
 	lr := models.LikeRequest{
 		Qzreferrer: userQzoneURL + strconv.FormatInt(m.QQ, 10),
 		Opuin:      m.QQ,

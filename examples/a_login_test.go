@@ -36,5 +36,4 @@ func TestLogin(t *testing.T) {
 		t.Log("登录状态:", status)
 		time.Sleep(2 * time.Second)
 	}
-
 }

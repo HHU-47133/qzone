@@ -2,6 +2,8 @@
 
 > 提供qq空间基础功能接口
 
+**！！本项目尚未开发完毕,改动较大！！**
+
 - 导入项目
 ```go
 go get -u github.com/HHU-47133/qzone
@@ -9,12 +11,61 @@ go get -u github.com/HHU-47133/qzone
 ## 功能接口
 - 具体实现请参看 `examples/*_test.go`
 - 管理类实现 `manager.go`; 接口实现 `api.go`
-### 登录
+### 登录流程
+- 结构介绍
 ```go
-// qrCodeOutputPath:二维码输出路径,例："./1.png"
-// qrCodeInBytes:二维码字节流输出通道,向有缓冲区的通道发送最新字节流数据
-// retryNum:尝试扫码登录的最大次数
-func QzoneLogin(qrCodeOutputPath string, qrCodeInBytes chan []byte, retryNum int64) (m Manager, err error)
+// QManager 用于管理多个QQ空间登录
+type QManager struct {
+    Mu    sync.RWMutex
+    Store map[string]*qsession
+}
+```
+```go
+// qsession 用于管理QQ空间单次扫码登录
+type qsession struct {
+    UserID     string // 标识本次登录权限所有人
+    QrCodeID   string // 标识本次二维码ID
+    Qrsig      string // 扫码登录需要使用的参数
+    Qrtoken    string // 由Qrsig计算而成
+    Cookie     string // 扫码登录过程使用
+    ExpiryTime time.Time // 本次登录二维码过期时间
+    Qpack      *Qpack    // 成功登录后创建的空间对象
+}
+```
+```go
+// Qpack 空间操作对象，api都绑定在这里
+type Qpack struct {
+    Cookie string
+    QQ     int64
+    Gtk    string
+    Gtk2   string
+    PSkey  string
+    Skey   string
+    Uin    string
+}
+```
+- 登录过程
+```go
+// 1、创建管理对象
+qm := qzone.NewQManager()
+```
+```go
+// 2、获取二维码
+// 传入一个string类型的参数用于标识本次登录授权人
+// 成功返回"base64编码的二维码数据","用于查询登录状态的二维码ID"
+b64s, qrID, _ = qm.GenerateQRCode("test-uid")
+```
+```go
+// 3、检测二维码扫码状态
+// 0成功 1未扫描 2未确认 3已过期 -1系统错误
+// 扫码成功后会自动创建Qpack对象:qm.Store[qrID].Qpack
+status, err := qm.CheckQRCodeStatus(qrID, "test-uid")
+```
+- 其他
+```go
+// 你可以直接通过cookie创建一个空间操作对象
+// cookie可以从qm.Store[qrID].Cookie获取
+qp := qzone.NewQpack(cookie)
 ```
 ### 好友、群相关
 - 群列表获取

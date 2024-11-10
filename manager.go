@@ -54,7 +54,7 @@ type Qpack struct {
 	Uin    string
 }
 
-// QManager 管理类
+// QManager 管理类 TODO:是否需要？用户自己管理？
 type QManager struct {
 	Mu    sync.RWMutex
 	Store map[string]*qsession
@@ -78,7 +78,7 @@ type qsession struct {
 }
 
 // NewQpack 初始化信息
-func newQpack(cookie string) *Qpack {
+func NewQpack(cookie string) *Qpack {
 	m := &Qpack{}
 	cookie = strings.ReplaceAll(cookie, " ", "")
 	for _, v := range strings.Split(cookie, ";") {
@@ -150,6 +150,13 @@ func (qm *QManager) GenerateQRCode(userID string) (string, string, error) {
 
 // CheckQRCodeStatus 检查二维码状态 //0成功 1未扫描 2未确认 3已过期   -1系统错误
 func (qm *QManager) CheckQRCodeStatus(codeID, userID string) (int8, error) {
+	// 已经成功创建Qpack则跳过
+	qm.Mu.RLock()
+	a := qm.Store[codeID].Qpack
+	qm.Mu.RUnlock()
+	if a != nil {
+		return 0, nil
+	}
 	qm.Mu.RLock()
 	_, exist := qm.Store[codeID]
 	if !exist {
@@ -211,7 +218,7 @@ func (qm *QManager) CheckQRCodeStatus(codeID, userID string) (int8, error) {
 		qm.Mu.Lock()
 		qm.Store[codeID].Cookie = qcookie
 		// 创建信息管理结构，携带登录回调cookie和重定向页面cookie
-		qm.Store[codeID].Qpack = newQpack(qcookie)
+		qm.Store[codeID].Qpack = NewQpack(qcookie) //TODO:解耦？
 		qm.Mu.Unlock()
 		return 0, nil
 	}

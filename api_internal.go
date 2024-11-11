@@ -12,10 +12,10 @@ import (
 )
 
 // GetShuoShuoCommentsRaw 从第pos条评论开始获取num条评论，num最大为20
-func (m *Qpack) shuoShuoCommentsRaw(num int, pos int, tid string) (comments []*models.Comment, err error) {
-	url := fmt.Sprintf(getCommentsURL, strconv.FormatInt(m.QQ, 10), pos, num, tid, m.Gtk2)
+func (m *QZone) shuoShuoCommentsRaw(num int, pos int, tid string) (comments []*models.Comment, err error) {
+	url := fmt.Sprintf(getCommentsURL, strconv.FormatInt(m.qq, 10), pos, num, tid, m.gtk2)
 	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
-		"cookie": m.Cookie,
+		"cookie": m.cookie,
 	})))
 	if err != nil {
 		er := errors.New("说说评论列表请求错误:" + err.Error())
@@ -51,14 +51,14 @@ func (m *Qpack) shuoShuoCommentsRaw(num int, pos int, tid string) (comments []*m
 }
 
 // UploadImage 上传图片
-func (m *Qpack) uploadImage(base64img string) (*models.UploadImageResp, error) {
+func (m *QZone) uploadImage(base64img string) (*models.UploadImageResp, error) {
 	uir := models.UploadImageRequest{
 		Filename:      "filename",
-		Uin:           m.QQ,
-		Skey:          m.Skey,
-		Zzpaneluin:    m.QQ,
-		PUin:          m.QQ,
-		PSkey:         m.PSkey,
+		Uin:           m.qq,
+		Skey:          m.skey,
+		Zzpaneluin:    m.qq,
+		PUin:          m.qq,
+		PSkey:         m.pskey,
 		Uploadtype:    "1",
 		Albumtype:     "7",
 		Exttype:       "0",
@@ -71,19 +71,19 @@ func (m *Qpack) uploadImage(base64img string) (*models.UploadImageResp, error) {
 		HdHeight:      "10000",
 		HdQuality:     "96",
 		BackUrls:      "http://upbak.photo.qzone.qq.com/cgi-bin/upload/cgi_upload_image,http://119.147.64.75/cgi-bin/upload/cgi_upload_image",
-		URL:           fmt.Sprintf(uploadImageURL, m.Gtk2),
+		URL:           fmt.Sprintf(uploadImageURL, m.gtk2),
 		Base64:        "1",
 		Picfile:       base64img,
-		Qzreferrer:    userQzoneURL + "/" + strconv.FormatInt(m.QQ, 10),
+		Qzreferrer:    userQzoneURL + "/" + strconv.FormatInt(m.qq, 10),
 	}
 
-	url := fmt.Sprintf(uploadImageURL, m.Gtk2)
+	url := fmt.Sprintf(uploadImageURL, m.gtk2)
 	payload := strings.NewReader(structToStr(uir))
 	data, err := DialRequest(NewRequest(WithMethod("POST"), WithUrl(url), WithBody(payload),
 		WithHeader(map[string]string{
 			"referer": userQzoneURL,
 			"origin":  userQzoneURL,
-			"cookie":  m.Cookie,
+			"cookie":  m.cookie,
 		})))
 	if err != nil {
 		return nil, errors.New("图片上传请求错误:" + err.Error())
@@ -110,7 +110,7 @@ func (m *Qpack) uploadImage(base64img string) (*models.UploadImageResp, error) {
 }
 
 // getPicBoAndRichval 获取已上传图片重要信息
-func (m *Qpack) getPicBoAndRichval(data *models.UploadImageResp) (picBo, richval string, err error) {
+func (m *QZone) getPicBoAndRichval(data *models.UploadImageResp) (picBo, richval string, err error) {
 	var flag bool
 	if data.Ret != 0 {
 		err = errors.New("已上传图片信息错误:fuck")
@@ -125,8 +125,8 @@ func (m *Qpack) getPicBoAndRichval(data *models.UploadImageResp) (picBo, richval
 	return
 }
 
-// ShuoShuoListRaw 获取用户QQ号为uin且最多num个说说列表，每个说说获取上限replynum个评论数量
-func (m *Qpack) shuoShuoListRaw(uin int64, num int, pos int, replynum int) ([]*models.ShuoShuoResp, error) {
+// ShuoShuoListRaw 获取用户qq号为uin且最多num个说说列表，每个说说获取上限replynum个评论数量
+func (m *QZone) shuoShuoListRaw(uin int64, num int, pos int, replynum int) ([]*models.ShuoShuoResp, error) {
 	mlr := models.MsgListRequest{
 		Uin:                uin,
 		Ftype:              "0",
@@ -134,7 +134,7 @@ func (m *Qpack) shuoShuoListRaw(uin int64, num int, pos int, replynum int) ([]*m
 		Pos:                strconv.Itoa(pos),
 		Num:                strconv.Itoa(num),
 		Replynum:           strconv.Itoa(replynum),
-		GTk:                m.Gtk2,
+		GTk:                m.gtk2,
 		Callback:           "_preloadCallback",
 		CodeVersion:        "1",
 		Format:             "json",
@@ -144,7 +144,7 @@ func (m *Qpack) shuoShuoListRaw(uin int64, num int, pos int, replynum int) ([]*m
 	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
 		"referer": userQzoneURL,
 		"origin":  userQzoneURL,
-		"cookie":  m.Cookie,
+		"cookie":  m.cookie,
 	})))
 	if err != nil {
 		er := errors.New("说说列表请求错误:" + err.Error())

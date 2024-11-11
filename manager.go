@@ -94,9 +94,9 @@ func NewQpack(cookie string) *Qpack {
 }
 
 // GenerateQRCode 生成二维码，返回base64 二维码ID 用于查询扫码情况
-func (qm *QZone) GenerateQRCode() (string, error) {
+func (qz *QZone) GenerateQRCode() (string, error) {
 	cookiesString := ""
-	qm.Qrsig = ""
+	qz.Qrsig = ""
 	data, err := DialRequest(NewRequest(
 		WithUrl(ptqrshowURL),
 		WithClient(&http.Client{CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
@@ -106,7 +106,7 @@ func (qm *QZone) GenerateQRCode() (string, error) {
 			for _, v := range response.Cookies() {
 				cookiesString = cookiesString + v.String()
 				if v.Name == "qrsig" {
-					qm.Qrsig = v.Value
+					qz.Qrsig = v.Value
 					break
 				}
 			}
@@ -116,20 +116,20 @@ func (qm *QZone) GenerateQRCode() (string, error) {
 		return "", er
 	}
 
-	if qm.Qrsig == "" {
+	if qz.Qrsig == "" {
 		er := errors.New("空间登录二维码cookie获取错误:" + cookiesString)
 		return "", er
 	}
 	base64 := base64.StdEncoding.EncodeToString(data)
-	qm.Qrtoken = genderGTK(qm.Qrsig, 0)
+	qz.Qrtoken = genderGTK(qz.Qrsig, 0)
 	return base64, nil
 }
 
 // CheckQRCodeStatus 检查二维码状态 //0成功 1未扫描 2未确认 3已过期   -1系统错误
-func (qm *QZone) CheckQRCodeStatus() (int8, error) {
-	qrtoken := qm.Qrtoken
-	qrsign := qm.Qrsig
-	qcookie := qm.Cookie
+func (qz *QZone) CheckQRCodeStatus() (int8, error) {
+	qrtoken := qz.Qrtoken
+	qrsign := qz.Qrsig
+	qcookie := qz.Cookie
 	urls := fmt.Sprintf(ptqrloginURL, qrtoken)
 	data, err := DialRequest(NewRequest(
 		WithUrl(urls),
@@ -167,9 +167,9 @@ func (qm *QZone) CheckQRCodeStatus() (int8, error) {
 			return -1, er
 		}
 		qcookie += redirectCookie
-		qm.Cookie = qcookie
+		qz.Cookie = qcookie
 		// 创建信息管理结构，携带登录回调cookie和重定向页面cookie
-		qm.Qpack = NewQpack(qcookie) //TODO:解耦？
+		qz.Qpack = NewQpack(qcookie) //TODO:解耦？
 		return 0, nil
 	}
 	return 0, nil

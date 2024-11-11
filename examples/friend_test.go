@@ -7,7 +7,7 @@ import (
 
 // 测试好友相关
 func TestFriendList(t *testing.T) {
-	friends, _ := qm.Qpack.FriendList()
+	friends, _ := qm.FriendList()
 	for i := 0; i < 10; i++ {
 		t.Log("[好友简略信息]", friends[i].Name, friends[i].Uin, friends[i].Online, friends[i].Image, friends[i].GroupName)
 		//fid, _ := m.FriendInfoDetail(friends[i].Uin) //TODO:详细信息获取有时候会莫名报错可能需要代理IP

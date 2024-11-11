@@ -7,7 +7,7 @@ import (
 
 // 测试好友相关
 func TestFriendList(t *testing.T) {
-	friends, _ := qm.Store[qrID].Qpack.FriendList()
+	friends, _ := qm.Qpack.FriendList()
 	for i := 0; i < 10; i++ {
 		t.Log("[好友简略信息]", friends[i].Name, friends[i].Uin, friends[i].Online, friends[i].Image, friends[i].GroupName)
 		//fid, _ := m.FriendInfoDetail(friends[i].Uin) //TODO:详细信息获取有时候会莫名报错可能需要代理IP
@@ -25,7 +25,7 @@ func TestQQGroupList(t *testing.T) {
 	}
 	// 将groupQQ设置为第一个群组
 	t.Log("第二次获取群")
-	groups1, _ := qm.Store[qrID].Qpack.QQGroupList()
+	groups1, _ := qm.Qpack.QQGroupList()
 	for _, v := range groups1 {
 		t.Log("[QQ群信息]", v.GroupCode, v.GroupName, v.TotalMember, v.NotFriends)
 	}
@@ -33,7 +33,7 @@ func TestQQGroupList(t *testing.T) {
 
 // 测试QQ群友列表
 func TestGroupMemberList(t *testing.T) {
-	groupMember, _ := qm.Store[qrID].Qpack.QQGroupMemberList(groupID)
+	groupMember, _ := qm.Qpack.QQGroupMemberList(groupID)
 	for _, v := range groupMember {
 		t.Log("[QQ群非好友信息]", v.Uin, v.NickName, v.AvatarURL, v.GroupCode)
 	}

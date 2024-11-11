@@ -9,8 +9,8 @@ var resentShuoShuoData string
 
 // 获取最新说说
 func TestGetLatestShuoShuo(t *testing.T) {
-	uin, _ := strconv.ParseInt(qm.Store[qrID].Qpack.Uin, 10, 64)
-	ss, err := qm.Store[qrID].Qpack.GetLatestShuoShuo(uin)
+	uin, _ := strconv.ParseInt(qm.Qpack.Uin, 10, 64)
+	ss, err := qm.Qpack.GetLatestShuoShuo(uin)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -20,8 +20,8 @@ func TestGetLatestShuoShuo(t *testing.T) {
 
 // 获取说说总数
 func TestGetShuoShuoCount(t *testing.T) {
-	uin, _ := strconv.ParseInt(qm.Store[qrID].Qpack.Uin, 10, 64)
-	cnt, err := qm.Store[qrID].Qpack.GetShuoShuoCount(uin)
+	uin, _ := strconv.ParseInt(qm.Qpack.Uin, 10, 64)
+	cnt, err := qm.Qpack.GetShuoShuoCount(uin)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,8 +32,8 @@ func TestGetShuoShuoCount(t *testing.T) {
 // 获取指定个数的说说
 func TestShuoShuoList(t *testing.T) {
 	cnt := int64(3)
-	uin, _ := strconv.ParseInt(qm.Store[qrID].Qpack.Uin, 10, 64)
-	shuoshuos, _ := qm.Store[qrID].Qpack.ShuoShuoList(uin, cnt, 1000)
+	uin, _ := strconv.ParseInt(qm.Qpack.Uin, 10, 64)
+	shuoshuos, _ := qm.Qpack.ShuoShuoList(uin, cnt, 1000)
 	for i, shuo := range shuoshuos {
 		t.Logf("[获取到说说][%d/%d]:%s", i, cnt, shuo.Content)
 	}
@@ -42,7 +42,7 @@ func TestShuoShuoList(t *testing.T) {
 // 获取指定说说一级评论总数
 // @{uin:2546229294,nick:爱莉希雅的,who:1}
 func TestGetLevel1CommentCount(t *testing.T) {
-	cnt, err := qm.Store[qrID].Qpack.GetLevel1CommentCount(tid)
+	cnt, err := qm.Qpack.GetLevel1CommentCount(tid)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,9 +52,9 @@ func TestGetLevel1CommentCount(t *testing.T) {
 
 // 获取指定说说所有的一级评论
 func TestShuoShuoCommentList(t *testing.T) {
-	cnt, _ := qm.Store[qrID].Qpack.GetLevel1CommentCount("5b76d2c97b1f196770890700")
+	cnt, _ := qm.Qpack.GetLevel1CommentCount("5b76d2c97b1f196770890700")
 	cnt = int64(90)
-	comments, _ := qm.Store[qrID].Qpack.ShuoShuoCommentList(tid, cnt, 1000)
+	comments, _ := qm.Qpack.ShuoShuoCommentList(tid, cnt, 1000)
 	resentShuoShuoData = resentShuoShuoData + "\n上条评论人是:"
 	for i, comment := range comments {
 		resentShuoShuoData = resentShuoShuoData + comment.OwnerName + " "
@@ -64,7 +64,7 @@ func TestShuoShuoCommentList(t *testing.T) {
 
 // 点赞说说
 func TestDoLike(t *testing.T) {
-	dl, err := qm.Store[qrID].Qpack.DoLike(tid)
+	dl, err := qm.Qpack.DoLike(tid)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +73,7 @@ func TestDoLike(t *testing.T) {
 
 //// 发布文字说说
 //func TestPublishShuoShuoText(t *testing.T) {
-//	pr, err := qm.Store[qrID].Qpack.PublishShuoShuo(resentShuoShuoData, nil)
+//	pr, err := qm.Qpack.PublishShuoShuo(resentShuoShuoData, nil)
 //	if err != nil {
 //		t.Fatal(err)
 //	}
@@ -97,7 +97,7 @@ func TestDoLike(t *testing.T) {
 //	}
 //	pic2Base64 := base64.StdEncoding.EncodeToString(srcByte)
 //	// 发说说
-//	pr, err := qm.Store[qrID].Qpack.PublishShuoShuo("我正在测试QQ空间自动发说说功能", []string{pic1Base64, pic2Base64})
+//	pr, err := qm.Qpack.PublishShuoShuo("我正在测试QQ空间自动发说说功能", []string{pic1Base64, pic2Base64})
 //	if err != nil {
 //		t.Fatal(err)
 //	}

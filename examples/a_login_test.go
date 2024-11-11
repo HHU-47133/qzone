@@ -22,11 +22,11 @@ var (
 func TestLogin(t *testing.T) {
 	// 读取测试配置文件
 	// 给一个userID用于获取二维码，成功返回base64数据和二维码id
-	b64s, qrID, _ = qm.GenerateQRCode("test-uid")
+	b64s, _ = qm.GenerateQRCode()
 	ddd, _ := base64.StdEncoding.DecodeString(b64s) //成图片文件并把文件写入到buffer
 	_ = os.WriteFile("./qrcode.png", ddd, 0666)
 	for {
-		status, err := qm.CheckQRCodeStatus(qrID, "test-uid")
+		status, err := qm.CheckQRCodeStatus()
 		if err != nil {
 			return
 		}

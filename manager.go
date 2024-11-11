@@ -4,14 +4,11 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
-	"time"
 )
 
 const (
@@ -54,27 +51,18 @@ type Qpack struct {
 	Uin    string
 }
 
-// QManager 管理类 TODO:是否需要？用户自己管理？
 type QManager struct {
-	Mu    sync.RWMutex
-	Store map[string]*qsession
+	Qrsig   string // 二维码接口获取到的参数
+	Qrtoken string // 由Qrsig计算而成
+	Cookie  string
+	Qpack   *Qpack // 单个QQ空间操作包
 }
 
 // NewQManager 创建管理类
 func NewQManager() *QManager {
 	return &QManager{
-		Store: make(map[string]*qsession),
+		Qpack: &Qpack{},
 	}
-}
-
-type qsession struct {
-	UserID     string
-	QrCodeID   string
-	Qrsig      string // 二维码接口获取到的参数
-	Qrtoken    string // 由Qrsig计算而成
-	Cookie     string
-	ExpiryTime time.Time // 过期时间
-	Qpack      *Qpack    // 单个QQ空间操作包
 }
 
 // NewQpack 初始化信息
@@ -106,17 +94,9 @@ func NewQpack(cookie string) *Qpack {
 }
 
 // GenerateQRCode 生成二维码，返回base64 二维码ID 用于查询扫码情况
-func (qm *QManager) GenerateQRCode(userID string) (string, string, error) {
+func (qm *QManager) GenerateQRCode() (string, error) {
 	cookiesString := ""
-	codeID := uuid.New().String()
-	qm.Mu.Lock()
-	qm.Store[codeID] = &qsession{
-		UserID:     userID,
-		QrCodeID:   codeID,
-		ExpiryTime: time.Now().Add(2 * time.Minute),
-	}
-	qm.Mu.Unlock()
-	qsign := ""
+	qm.Qrsig = ""
 	data, err := DialRequest(NewRequest(
 		WithUrl(ptqrshowURL),
 		WithClient(&http.Client{CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
@@ -126,58 +106,30 @@ func (qm *QManager) GenerateQRCode(userID string) (string, string, error) {
 			for _, v := range response.Cookies() {
 				cookiesString = cookiesString + v.String()
 				if v.Name == "qrsig" {
-					qsign = v.Value
+					qm.Qrsig = v.Value
 					break
 				}
 			}
 		})))
 	if err != nil {
 		er := errors.New("空间登录二维码显示错误:" + string(data))
-		return "", "", er
+		return "", er
 	}
 
-	if qsign == "" {
+	if qm.Qrsig == "" {
 		er := errors.New("空间登录二维码cookie获取错误:" + cookiesString)
-		return "", "", er
+		return "", er
 	}
 	base64 := base64.StdEncoding.EncodeToString(data)
-	qm.Mu.Lock()
-	qm.Store[codeID].Qrsig = qsign
-	qm.Store[codeID].Qrtoken = genderGTK(qsign, 0)
-	qm.Mu.Unlock()
-	return base64, codeID, nil
+	qm.Qrtoken = genderGTK(qm.Qrsig, 0)
+	return base64, nil
 }
 
 // CheckQRCodeStatus 检查二维码状态 //0成功 1未扫描 2未确认 3已过期   -1系统错误
-func (qm *QManager) CheckQRCodeStatus(codeID, userID string) (int8, error) {
-	// 已经成功创建Qpack则跳过
-	qm.Mu.RLock()
-	a := qm.Store[codeID].Qpack
-	qm.Mu.RUnlock()
-	if a != nil {
-		return 0, nil
-	}
-	qm.Mu.RLock()
-	_, exist := qm.Store[codeID]
-	if !exist {
-		qm.Mu.RUnlock()
-		return -1, errors.New("二维码不存在")
-	}
-	uid := qm.Store[codeID].UserID
-	qm.Mu.RUnlock()
-	// 无效二维码id和非法访问
-	if uid != userID {
-		return -1, errors.New("二维码不存在")
-	}
-	qm.Mu.RLock()
-	expiryTime := qm.Store[codeID].ExpiryTime
-	qrtoken := qm.Store[codeID].Qrtoken
-	qrsign := qm.Store[codeID].Qrsig
-	qcookie := qm.Store[codeID].Cookie
-	qm.Mu.RUnlock()
-	if time.Now().After(expiryTime) {
-		return 3, nil
-	}
+func (qm *QManager) CheckQRCodeStatus() (int8, error) {
+	qrtoken := qm.Qrtoken
+	qrsign := qm.Qrsig
+	qcookie := qm.Cookie
 	urls := fmt.Sprintf(ptqrloginURL, qrtoken)
 	data, err := DialRequest(NewRequest(
 		WithUrl(urls),
@@ -215,11 +167,9 @@ func (qm *QManager) CheckQRCodeStatus(codeID, userID string) (int8, error) {
 			return -1, er
 		}
 		qcookie += redirectCookie
-		qm.Mu.Lock()
-		qm.Store[codeID].Cookie = qcookie
+		qm.Cookie = qcookie
 		// 创建信息管理结构，携带登录回调cookie和重定向页面cookie
-		qm.Store[codeID].Qpack = NewQpack(qcookie) //TODO:解耦？
-		qm.Mu.Unlock()
+		qm.Qpack = NewQpack(qcookie) //TODO:解耦？
 		return 0, nil
 	}
 	return 0, nil

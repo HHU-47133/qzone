@@ -51,16 +51,16 @@ type Qpack struct {
 	Uin    string
 }
 
-type QManager struct {
+type QZone struct {
 	Qrsig   string // 二维码接口获取到的参数
 	Qrtoken string // 由Qrsig计算而成
 	Cookie  string
 	Qpack   *Qpack // 单个QQ空间操作包
 }
 
-// NewQManager 创建管理类
-func NewQManager() *QManager {
-	return &QManager{
+// NewQZone 创建管理类
+func NewQZone() *QZone {
+	return &QZone{
 		Qpack: &Qpack{},
 	}
 }
@@ -94,7 +94,7 @@ func NewQpack(cookie string) *Qpack {
 }
 
 // GenerateQRCode 生成二维码，返回base64 二维码ID 用于查询扫码情况
-func (qm *QManager) GenerateQRCode() (string, error) {
+func (qm *QZone) GenerateQRCode() (string, error) {
 	cookiesString := ""
 	qm.Qrsig = ""
 	data, err := DialRequest(NewRequest(
@@ -126,7 +126,7 @@ func (qm *QManager) GenerateQRCode() (string, error) {
 }
 
 // CheckQRCodeStatus 检查二维码状态 //0成功 1未扫描 2未确认 3已过期   -1系统错误
-func (qm *QManager) CheckQRCodeStatus() (int8, error) {
+func (qm *QZone) CheckQRCodeStatus() (int8, error) {
 	qrtoken := qm.Qrtoken
 	qrsign := qm.Qrsig
 	qcookie := qm.Cookie

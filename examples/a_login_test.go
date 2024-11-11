@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	qm       = qzone.NewQManager()
+	qm       = qzone.NewQZone()
 	qrID     string
 	b64s     string
 	groupID  int64

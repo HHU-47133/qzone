@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -40,13 +41,36 @@ func init() {
 	log.SetPrefix("[qzone]")
 }
 
+// QZone QQ空间对象
+// TODO:api调用之前是否可以便捷进行登录状态的判断?
 type QZone struct {
-	qrsig   string // 二维码接口获取到的参数
-	qrtoken string // 由Qrsig计算而成
-	cookie  string
-	status  int8 // 0 成功；1 未登录；2 已过期；
+	// 登录状态
+	status int8 // 0 成功；1 未登录；2 已过期；
+	// 暴露出去的字段
+	Info info
+	// 扫码登录流程使用
+	qrLogin
+	// API调用使用
+	action
+}
 
-	qq    int64
+// info 暴露出去的字段
+type info struct {
+	QQ          string // QQ空间的账号
+	Cookie      string // 登录成功的Cookie，保存以便下次使用
+	ExpiredTime time.Time
+}
+
+// qrLogin 扫码登录需要的字段
+type qrLogin struct {
+	qrsig   string // 二维码接口获取到的参数
+	qrtoken string // 由qrsig计算而成
+	cookie  string
+}
+
+// action 调用API需要使用的参数
+type action struct {
+	qq    int64 // QQ号
 	gtk   string
 	gtk2  string
 	pskey string
@@ -64,11 +88,12 @@ func NewQZone() *QZone {
 func (qz *QZone) WithCookie(cookie string) *QZone {
 	qz.cookie = cookie
 	qz.unpack()
+	// 设置为成功登录 TODO:可以做失效判断
 	qz.status = 0
 	return qz
 }
 
-// unpack 初始化信息
+// unpack 初始化信息,将成功扫码登录获取到的cookie解析
 func (qz *QZone) unpack() {
 	cookie := strings.ReplaceAll(qz.cookie, " ", "")
 	for _, v := range strings.Split(cookie, ";") {
@@ -92,6 +117,9 @@ func (qz *QZone) unpack() {
 	}
 	qz.qq = t
 	qz.cookie = cookie
+
+	qz.Info.Cookie = cookie
+	qz.Info.QQ = strings.TrimPrefix(qz.uin, "o")
 	return
 }
 
@@ -127,12 +155,11 @@ func (qz *QZone) GenerateQRCode() (string, error) {
 	return base64, nil
 }
 
-// CheckQRCodeStatus 检查二维码状态 //0成功 1未扫描 2未确认 3已过期   -1系统错误
+// CheckQRCodeStatus 检查二维码状态 //0成功 1未扫描 2未确认 3已过期  -1系统错误
 func (qz *QZone) CheckQRCodeStatus() (int8, error) {
 	if qz.status == 0 {
 		return 0, nil
 	}
-
 	qrtoken := qz.qrtoken
 	qrsign := qz.qrsig
 	qcookie := qz.cookie

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/HHU-47133/qzone/models"
+	"github.com/PuerkitoBio/goquery"
 	"github.com/tidwall/gjson"
 	"log"
 	"math"
@@ -23,19 +24,19 @@ var (
 )
 
 // QQGroupList 群列表获取
-func (m *QZone) QQGroupList() ([]*models.QQGroupResp, error) {
+func (q *QZone) QQGroupList() ([]*models.QQGroupResp, error) {
 	gr := &models.QQGroupReq{
-		Uin:     m.qq,
+		Uin:     q.qq,
 		Do:      "1",
 		Rd:      fmt.Sprintf("%010.8f", rand.Float64()),
 		Fupdate: "1",
 		Clean:   "1",
-		GTk:     m.gtk2,
+		GTk:     q.gtk2,
 	}
 	url := getQQGroupURL + structToStr(gr)
 	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
 		"user-agent": ua,
-		"cookie":     m.cookie,
+		"cookie":     q.cookie,
 	})))
 	if err != nil {
 		er := errors.New("QQ群请求错误:" + err.Error())
@@ -67,18 +68,18 @@ func (m *QZone) QQGroupList() ([]*models.QQGroupResp, error) {
 }
 
 // QQGroupMemberList 群友(非好友)列表获取
-func (m *QZone) QQGroupMemberList(gid int64) ([]*models.QQGroupMemberResp, error) {
+func (q *QZone) QQGroupMemberList(gid int64) ([]*models.QQGroupMemberResp, error) {
 	gmr := &models.QQGroupMemberReq{
-		Uin:     m.qq,
+		Uin:     q.qq,
 		Gid:     gid,
 		Fupdate: "1",
 		Type:    "1",
-		GTk:     m.gtk2,
+		GTk:     q.gtk2,
 	}
 	url := getQQGroupMemberURL + structToStr(gmr)
 	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
 		"user-agent": ua,
-		"cookie":     m.cookie,
+		"cookie":     q.cookie,
 	})))
 	if err != nil {
 		er := errors.New("QQ群非好友请求错误:" + err.Error())
@@ -110,12 +111,12 @@ func (m *QZone) QQGroupMemberList(gid int64) ([]*models.QQGroupMemberResp, error
 }
 
 // FriendList 好友列表获取 TODO:有时候显示亲密度前200好友
-func (m *QZone) FriendList() ([]*models.FriendInfoEasyResp, error) {
-	url := fmt.Sprintf(friendURL, m.gtk2) + "&uin=" + strconv.FormatInt(m.qq, 10)
+func (q *QZone) FriendList() ([]*models.FriendInfoEasyResp, error) {
+	url := fmt.Sprintf(friendURL, q.gtk2) + "&uin=" + strconv.FormatInt(q.qq, 10)
 	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
 		"referer": userQzoneURL,
 		"origin":  userQzoneURL,
-		"cookie":  m.cookie,
+		"cookie":  q.cookie,
 	})))
 	if err != nil {
 		er := errors.New("好友列表请求错误:" + err.Error())
@@ -155,12 +156,12 @@ func (m *QZone) FriendList() ([]*models.FriendInfoEasyResp, error) {
 }
 
 // FriendInfoDetail 好友详细信息获取
-func (m *QZone) FriendInfoDetail(uin int64) (*models.FriendInfoDetailResp, error) {
-	url := fmt.Sprintf(detailFriendURL, m.gtk2) + "&uin=" + strconv.FormatUint(uint64(uin), 10)
+func (q *QZone) FriendInfoDetail(uin int64) (*models.FriendInfoDetailResp, error) {
+	url := fmt.Sprintf(detailFriendURL, q.gtk2) + "&uin=" + strconv.FormatUint(uint64(uin), 10)
 	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
 		"referer": userQzoneURL,
 		"origin":  userQzoneURL,
-		"cookie":  m.cookie,
+		"cookie":  q.cookie,
 	})))
 	if err != nil {
 		er := errors.New("好友详细信息请求错误:" + err.Error())
@@ -185,7 +186,7 @@ func (m *QZone) FriendInfoDetail(uin int64) (*models.FriendInfoDetailResp, error
 }
 
 // PublishShuoShuo 发布说说，content文本内容，base64imgList图片数组
-func (m *QZone) PublishShuoShuo(content string, base64imgList []string) (*models.ShuoShuoPublishResp, error) {
+func (q *QZone) PublishShuoShuo(content string, base64imgList []string) (*models.ShuoShuoPublishResp, error) {
 	var (
 		uir         *models.UploadImageResp
 		err         error
@@ -196,12 +197,12 @@ func (m *QZone) PublishShuoShuo(content string, base64imgList []string) (*models
 	)
 
 	for _, base64img := range base64imgList {
-		uir, err = m.uploadImage(base64img)
+		uir, err = q.uploadImage(base64img)
 		if err != nil {
 			log.Println("说说发布失败:", err.Error())
 			return nil, err
 		}
-		picBo, richval, err = m.getPicBoAndRichval(uir)
+		picBo, richval, err = q.getPicBoAndRichval(uir)
 		if err != nil {
 			log.Println("说说发布失败:", err.Error())
 			return nil, err
@@ -219,10 +220,10 @@ func (m *QZone) PublishShuoShuo(content string, base64imgList []string) (*models
 		Ver:            "1",
 		UgcRight:       "1",
 		ToSign:         "0",
-		Hostuin:        m.qq,
+		Hostuin:        q.qq,
 		CodeVersion:    "1",
 		Format:         "json",
-		Qzreferrer:     userQzoneURL + "/" + strconv.FormatInt(m.qq, 10),
+		Qzreferrer:     userQzoneURL + "/" + strconv.FormatInt(q.qq, 10),
 	}
 	if len(base64imgList) > 0 {
 		epr.Richtype = "1"
@@ -230,13 +231,13 @@ func (m *QZone) PublishShuoShuo(content string, base64imgList []string) (*models
 		epr.Subrichtype = "1"
 		epr.PicBo = strings.Join(picBoList, ",")
 	}
-	url := fmt.Sprintf(emotionPublishURL, m.gtk2)
+	url := fmt.Sprintf(emotionPublishURL, q.gtk2)
 	payload := strings.NewReader(structToStr(epr))
 	data, err := DialRequest(NewRequest(WithMethod("POST"), WithUrl(url), WithBody(payload),
 		WithHeader(map[string]string{
 			"referer": userQzoneURL,
 			"origin":  userQzoneURL,
-			"cookie":  m.cookie,
+			"cookie":  q.cookie,
 		})))
 	if err != nil {
 		er := errors.New("说说发布请求错误:" + err.Error())
@@ -260,12 +261,12 @@ func (m *QZone) PublishShuoShuo(content string, base64imgList []string) (*models
 }
 
 // ShuoShuoList 获取所有说说 实际能访问的说说个数 <= 说说总数(空间仅展示近半年等情况) (有空间访问权限即可)
-func (m *QZone) ShuoShuoList(uin int64, num int64, ms int64) (ShuoShuo []*models.ShuoShuoResp, err error) {
+func (q *QZone) ShuoShuoList(uin int64, num int64, ms int64) (ShuoShuo []*models.ShuoShuoResp, err error) {
 	cnt := num
 	t := int(math.Ceil(float64(cnt) / 20.0))
 	var i int
 	//获取最大数量，控制i的取值
-	maxCnt, err := m.GetShuoShuoCount(uin)
+	maxCnt, err := q.GetShuoShuoCount(uin)
 	if err != nil {
 		log.Println("说说获取失败:", err.Error())
 		return nil, err
@@ -274,7 +275,7 @@ func (m *QZone) ShuoShuoList(uin int64, num int64, ms int64) (ShuoShuo []*models
 		if i >= int(maxCnt) {
 			break
 		}
-		ShuoShuoTemp, err := m.shuoShuoListRaw(uin, 20, i, 0)
+		ShuoShuoTemp, err := q.shuoShuoListRaw(uin, 20, i, 0)
 		if err != nil {
 			log.Println("所有说说获取失败:", err.Error())
 			return nil, err
@@ -292,7 +293,7 @@ func (m *QZone) ShuoShuoList(uin int64, num int64, ms int64) (ShuoShuo []*models
 }
 
 // GetShuoShuoCount 获取用户QQ号为uin的说说总数（有空间访问权限即可）
-func (m *QZone) GetShuoShuoCount(uin int64) (cnt int64, err error) {
+func (q *QZone) GetShuoShuoCount(uin int64) (cnt int64, err error) {
 	mlr := models.MsgListRequest{
 		Uin:                uin,
 		Ftype:              "0",
@@ -300,7 +301,7 @@ func (m *QZone) GetShuoShuoCount(uin int64) (cnt int64, err error) {
 		Pos:                "0",
 		Num:                "1",
 		Replynum:           "0",
-		GTk:                m.gtk2,
+		GTk:                q.gtk2,
 		Callback:           "_preloadCallback",
 		CodeVersion:        "1",
 		Format:             "json",
@@ -310,7 +311,7 @@ func (m *QZone) GetShuoShuoCount(uin int64) (cnt int64, err error) {
 	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
 		"referer": userQzoneURL,
 		"origin":  userQzoneURL,
-		"cookie":  m.cookie,
+		"cookie":  q.cookie,
 	})))
 	if err != nil {
 		er := errors.New("说说总数请求错误:" + err.Error())
@@ -330,10 +331,10 @@ func (m *QZone) GetShuoShuoCount(uin int64) (cnt int64, err error) {
 }
 
 // GetLevel1CommentCount 获取一级评论总数(限制本人)
-func (m *QZone) GetLevel1CommentCount(tid string) (cnt int64, err error) {
-	url := fmt.Sprintf(getCommentsURL, strconv.FormatInt(m.qq, 10), 0, 1, tid, m.gtk2)
+func (q *QZone) GetLevel1CommentCount(tid string) (cnt int64, err error) {
+	url := fmt.Sprintf(getCommentsURL, strconv.FormatInt(q.qq, 10), 0, 1, tid, q.gtk2)
 	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(map[string]string{
-		"cookie": m.cookie,
+		"cookie": q.cookie,
 	})))
 	if err != nil {
 		er := errors.New("说说评论请求错误:" + err.Error())
@@ -355,11 +356,11 @@ func (m *QZone) GetLevel1CommentCount(tid string) (cnt int64, err error) {
 }
 
 // ShuoShuoCommentList 根据说说ID获取评论（限制本人）
-func (m *QZone) ShuoShuoCommentList(tid string, num int64, ms int64) (comments []*models.Comment, err error) {
+func (q *QZone) ShuoShuoCommentList(tid string, num int64, ms int64) (comments []*models.Comment, err error) {
 	numOfComments := num
 	t := int(math.Ceil(float64(numOfComments) / 20.0))
 	//获取最大数量，控制i的取值
-	maxCnt, err := m.GetLevel1CommentCount(tid)
+	maxCnt, err := q.GetLevel1CommentCount(tid)
 	if err != nil {
 		log.Println("说说评论获取失败:", err.Error())
 		return nil, err
@@ -369,7 +370,7 @@ func (m *QZone) ShuoShuoCommentList(tid string, num int64, ms int64) (comments [
 		if i >= int(maxCnt) {
 			break
 		}
-		commentsTemp, err := m.shuoShuoCommentsRaw(20, i, tid)
+		commentsTemp, err := q.shuoShuoCommentsRaw(20, i, tid)
 		if err != nil {
 			log.Println("说说评论获取失败:", err.Error())
 			return nil, err
@@ -388,8 +389,8 @@ func (m *QZone) ShuoShuoCommentList(tid string, num int64, ms int64) (comments [
 }
 
 // GetLatestShuoShuo 获取用户QQ号为uin的最新说说（有空间访问权限即可）
-func (m *QZone) GetLatestShuoShuo(uin int64) (*models.ShuoShuoResp, error) {
-	ss, err := m.shuoShuoListRaw(uin, 1, 0, 0)
+func (q *QZone) GetLatestShuoShuo(uin int64) (*models.ShuoShuoResp, error) {
+	ss, err := q.shuoShuoListRaw(uin, 1, 0, 0)
 	fmt.Println("ss!!!!!!:", ss)
 	if err != nil {
 		er := errors.New("最新说说获取错误:" + err.Error())
@@ -400,24 +401,24 @@ func (m *QZone) GetLatestShuoShuo(uin int64) (*models.ShuoShuoResp, error) {
 }
 
 // DoLike 说说空间点赞 TODO:疑似无效
-func (m *QZone) DoLike(tid string) (*models.LikeResp, error) {
+func (q *QZone) DoLike(tid string) (*models.LikeResp, error) {
 	lr := models.LikeRequest{
-		Qzreferrer: userQzoneURL + strconv.FormatInt(m.qq, 10),
-		Opuin:      m.qq,
-		Unikey:     userQzoneURL + strconv.FormatInt(m.qq, 10) + "/mood/" + tid,
+		Qzreferrer: userQzoneURL + strconv.FormatInt(q.qq, 10),
+		Opuin:      q.qq,
+		Unikey:     userQzoneURL + strconv.FormatInt(q.qq, 10) + "/mood/" + tid,
 		From:       "1",
 		Fid:        tid,
 		Typeid:     "0",
 		Appid:      "311",
 	}
 	lr.Curkey = lr.Unikey
-	url := fmt.Sprintf(likeURL, m.gtk2)
+	url := fmt.Sprintf(likeURL, q.gtk2)
 	payload := strings.NewReader(structToStr(lr))
 	data, err := DialRequest(NewRequest(WithMethod("POST"), WithUrl(url),
 		WithBody(payload), WithHeader(map[string]string{
 			"referer": userQzoneURL,
 			"origin":  userQzoneURL,
-			"cookie":  m.cookie,
+			"cookie":  q.cookie,
 		})))
 	if err != nil {
 		er := errors.New("点赞请求错误:" + err.Error())
@@ -440,4 +441,174 @@ func (m *QZone) DoLike(tid string) (*models.LikeResp, error) {
 		return nil, er
 	}
 	return likeResp, nil
+}
+
+// GetQZoneHistory 获取QQ空间历史消息（限制本人）
+func (q *QZone) GetQZoneHistory() ([]*models.QZoneHistoryItem, error) {
+	qzhr := models.QZoneHistoryReq{
+		Uin:                q.qq,
+		Offset:             0,
+		Count:              10,
+		BeginTime:          "",
+		EndTime:            "",
+		Getappnotification: "1",
+		Getnotifi:          "1",
+		HasGetKey:          "0",
+		Useutf8:            "1",
+		Outputhtmlfeed:     "1",
+		Scope:              "1",
+		Set:                "0",
+		Format:             "json",
+		Gtk:                q.gtk,
+	}
+	headers := map[string]string{
+		"cookie":                    q.cookie,
+		"User-Agent":                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0",
+		"accept":                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+		"authority":                 "user.qzone.qq.com",
+		"pragma":                    "no-cache",
+		"cache-control":             "no-cache",
+		"accept-language":           "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+		"sec-ch-ua":                 "\"Not A(Brand\";v=\"99\", \"Microsoft Edge\";v=\"121\", \"Chromium\";v=\"121\"",
+		"sec-ch-ua-mobile":          "?0",
+		"sec-ch-ua-platform":        "\"Windows\"",
+		"sec-fetch-dest":            "document",
+		"sec-fetch-mode":            "navigate",
+		"sec-fetch-site":            "none",
+		"sec-fetch-user":            "?1",
+		"upgrade-insecure-requests": "1",
+		"Content-Type":              "application/json; charset=utf-8",
+	}
+	url := getQZoneHistory + structToStr(qzhr)
+
+	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(headers)))
+	if err != nil {
+		er := errors.New("QQ空间历史数据请求错误:" + err.Error())
+		log.Println("QQ空间历史数据请求失败:" + er.Error())
+		return nil, er
+	}
+
+	// decodeHtml 解码其中的html字符（例如\x3C）
+	decodeHtml := func(dataStr string) string {
+		// 1. 正则匹配 "\xHH" 的 16 进制编码部分
+		re := regexp.MustCompile(`\\x[0-9a-fA-F]{2}`)
+
+		// 替换每个匹配项
+		decoded := re.ReplaceAllStringFunc(dataStr, func(hex string) string {
+			// 去掉 "\x" 前缀，并解析为整数
+			hexValue, err := strconv.ParseInt(hex[2:], 16, 32)
+			if err != nil {
+				// 如果解析失败，保留原字符串
+				return hex
+			}
+			// 转换为字符
+			return string(rune(hexValue))
+		})
+
+		// 2. 去除反斜杠定义
+		re2 := regexp.MustCompile(`\\+`)
+		decoded = re2.ReplaceAllStringFunc(decoded, func(match string) string {
+			if match == `\/` { // \/ -> /
+				return `/`
+			}
+			return `` // 否则，去除反斜杠
+		})
+
+		return decoded
+	}
+	// extractHtml 提取其中的html部分
+	extractHtml := func(parsed string) []string {
+		//匹配 html:'(.*?)'
+		//re := regexp.MustCompile(`html:'(.*?)'`)
+		re := regexp.MustCompile(`html:'(.*?)',opuin`)
+		matches := re.FindAllStringSubmatch(parsed, -1)
+		htmls := make([]string, len(matches))
+		for idx, match := range matches {
+			htmls[idx] = match[1]
+		}
+
+		return htmls
+	}
+	// extractHistoryMsg 解析html代码，提取一条消息的数据
+	extractHistoryMsg := func(html string) (*models.QZoneHistoryItem, error) {
+		doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
+		if err != nil {
+			return nil, errors.New("parse history msg failed")
+		}
+		var item *models.QZoneHistoryItem
+		doc.Find("li.f-s-s").Each(func(i int, s *goquery.Selection) {
+			// sender qq
+			senderQQ, _ := s.Find(".user-avatar").Attr("link")
+			senderQQ = strings.TrimPrefix(senderQQ, "nameCard_")
+			// 说说ID
+			shuoshuoID, _ := s.Find("i[name='feed_data']").Attr("data-tid")
+			// 说说消息中的图片
+			var shuoshuoImgUrls []string
+			s.Find(".f-ct-txtimg .img-box img").Each(func(j int, imgS *goquery.Selection) {
+				attr, exists := imgS.Attr("src")
+				if exists {
+					shuoshuoImgUrls = append(shuoshuoImgUrls, attr)
+				}
+			})
+			// 说说内容
+			shuoshuoContent := s.Find(".f-ct-txtimg .txt-box .txt-box-title").Contents().FilterFunction(func(j int, txtS *goquery.Selection) bool {
+				// 过滤掉 <a> 和 <span> 等子标签，只保留纯文本节点
+				return goquery.NodeName(txtS) == "#text"
+			}).Text()
+			shuoshuoContent = strings.TrimSpace(shuoshuoContent)
+
+			// createTime
+			createTimeStr, _ := s.Find("i[name='feed_data']").Attr("data-abstime")
+			createTime, _ := strconv.ParseInt(createTimeStr, 10, 64)
+			// 互动类型
+			actionType := s.Find(".f-nick .state").Text()
+
+			// 互动内容
+			comments := s.Find(".comments-content").Text()
+			suffix := s.Find(".comments-content .comments-op").Text()
+			if len(comments) > 0 {
+				comments = strings.SplitN(comments, ": ", 2)[1]
+				comments = strings.TrimSuffix(comments, suffix)
+			}
+
+			// 互动消息中的图片
+			var imgUrls []string
+			s.Find(".comments-content .comments-thumbnails img").Each(func(j int, imgS *goquery.Selection) {
+				attrOnLoad, exists := imgS.Attr("onload")
+				if exists {
+					link := matchWithRegexp(attrOnLoad, `trueSrc:'(.*?)'`, true)
+					if len(link) > 0 {
+						imgUrls = append(imgUrls, link[0])
+					}
+				}
+			})
+
+			item = &models.QZoneHistoryItem{
+				SenderQQ:        senderQQ,
+				ActionType:      actionType,
+				ShuoshuoID:      shuoshuoID,
+				Content:         comments,
+				CreateTime:      time.Unix(createTime, 0),
+				ImgUrls:         imgUrls,
+				ShuoshuoContent: shuoshuoContent,
+				ShuoshuoImgUrls: shuoshuoImgUrls,
+			}
+		})
+		return item, nil
+	}
+
+	htmlSlice := extractHtml(decodeHtml(string(data)))
+
+	items := make([]*models.QZoneHistoryItem, len(htmlSlice))
+	// 分别对html切片中的每一条数据进行处理
+	for idx, html := range htmlSlice {
+		item, err := extractHistoryMsg(html)
+		if err != nil {
+			er := errors.New("QQ空间历史数据解析错误:" + err.Error())
+			log.Println("QQ空间历史数据解析失败:" + er.Error())
+			return nil, er
+		}
+		items[idx] = item
+	}
+	return items, nil
 }

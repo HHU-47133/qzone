@@ -55,58 +55,65 @@ qm := qzone.NewQZone().WithCookie(cookie)
 ### 好友、群相关
 - 群列表获取
 ```go
-func (m *QZone) QQGroupList() ([]*models.QQGroupResp, error)
+func (q *QZone) QQGroupList() ([]*models.QQGroupResp, error)
 ```
 - 好友获取
 ```go
-func (m *QZone) FriendList() ([]*models.FriendInfoEasyResp, error)
+func (q *QZone) FriendList() ([]*models.FriendInfoEasyResp, error)
 ```
 - 群友(非好友)获取
 ```go
-func (m *QZone) QQGroupMemberList(gid int64) ([]*models.QQGroupMemberResp, error)
+func (q *QZone) QQGroupMemberList(gid int64) ([]*models.QQGroupMemberResp, error)
 ```
 - 好友详细信息获取
 ```go
 // uin:本人QQ
-func (m *QZone) FriendInfoDetail(uin int64) (*models.FriendInfoDetailResp, error)
+func (q *QZone) FriendInfoDetail(uin int64) (*models.FriendInfoDetailResp, error)
 ```
 ### 说说相关
 - 说说发布
 ```go
 // content:文本内容
 // base64imgList:图片数组,为nil则只发文字
-func (m *QZone) PublishShuoShuo(content string, base64imgList []string) (*models.ShuoShuoPublishResp, error)
+func (q *QZone) PublishShuoShuo(content string, base64imgList []string) (*models.ShuoShuoPublishResp, error)
 ```
 - 说说获取
 ```go
 // uin:有访问权限的QQ
 // num:获取说说个数
 // ms:延迟访问毫秒
-func (m *QZone) ShuoShuoList(uin int64, num int64, ms int64) (ShuoShuo []*models.ShuoShuoResp, err error)
+func (q *QZone) ShuoShuoList(uin int64, num int64, ms int64) (ShuoShuo []*models.ShuoShuoResp, err error)
 ```
 - 说说总数获取
 ```go
 // uin:有访问权限的QQ
 // 实际能访问的说说数量<=说说总数(封存动态)
-func (m *QZone) GetShuoShuoCount(uin int64) (cnt int64, err error)
+func (q *QZone) GetShuoShuoCount(uin int64) (cnt int64, err error)
 ```
 - 说说一级评论总数
 ```go
 // tid:说说id（限制本人）
-func (m *QZone) GetLevel1CommentCount(tid string) (cnt int64, err error)
+func (q *QZone) GetLevel1CommentCount(tid string) (cnt int64, err error)
 ```
 - 说说评论内容获取
 ```go
 // tid:说说id（限制本人）
 // num:评论上限
 // ms:延迟访问毫秒
-func (m *QZone) ShuoShuoCommentList(tid string, num int64, ms int64) 
+func (q *QZone) ShuoShuoCommentList(tid string, num int64, ms int64) 
 ```
 - 最新说说获取
 ```go
 // uin:有访问权限的QQ
-func (m *QZone) GetLatestShuoShuo(uin int64) (*models.ShuoShuoResp, error)
+func (q *QZone) GetLatestShuoShuo(uin int64) (*models.ShuoShuoResp, error)
 ```
+
+- 历史消息数据获取
+```go
+// GetQZoneHistory 获取QQ空间历史消息（限制本人）
+func (q *QZone) GetQZoneHistory() ([]*models.QZoneHistoryItem, error)
+````
+
 ### 其他
 - 单个说说地址
 ```go

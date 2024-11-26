@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -45,4 +46,24 @@ func structToStr(in interface{}) (payload string) {
 // 获取说说详情页面
 func getShuoShuoUnikey(uin string, tid string) (unikey string) {
 	return fmt.Sprintf("http://user.qzone.qq.com/%s/mood/%s", uin, tid)
+}
+
+// matchWithRegexp 返回data中所有匹配pattern的字符串，extract为true时，仅返回匹配到内容
+func matchWithRegexp(data, pattern string, extract bool) []string {
+	re := regexp.MustCompile(pattern)
+	matched := re.FindAllStringSubmatch(data, -1)
+	if matched == nil {
+		return nil
+	}
+
+	res := make([]string, len(matched))
+	for i, match := range matched {
+		if extract {
+			res[i] = match[1]
+		} else {
+			res[i] = match[0]
+		}
+	}
+
+	return res
 }

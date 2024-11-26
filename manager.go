@@ -34,6 +34,8 @@ const (
 	getQQGroupURL = "https://user.qzone.qq.com/proxy/domain/r.qzone.qq.com/cgi-bin/tfriend/qqgroupfriend_extend.cgi?"
 	// 获取QQ群成员非好友URL
 	getQQGroupMemberURL = "https://user.qzone.qq.com/proxy/domain/r.qzone.qq.com/cgi-bin/tfriend/qqgroupfriend_groupinfo.cgi?"
+	// 获取QQ空间历史消息
+	getQZoneHistory = "https://user.qzone.qq.com/proxy/domain/ic2.qzone.qq.com/cgi-bin/feeds/feeds2_html_pav_all?"
 )
 
 func init() {
@@ -58,6 +60,8 @@ type QZone struct {
 type info struct {
 	QQ          string // QQ空间的账号
 	Cookie      string // 登录成功的Cookie，保存以便下次使用
+	Gtk         string // 临时添加，用于获取历史久远的空间数据拉取使用
+	Gtk2        string // 临时添加，用于获取历史久远的空间数据拉取使用
 	ExpiredTime time.Time
 }
 
@@ -85,48 +89,50 @@ func NewQZone() *QZone {
 	}
 }
 
-func (qz *QZone) WithCookie(cookie string) *QZone {
-	qz.cookie = cookie
-	qz.unpack()
+func (q *QZone) WithCookie(cookie string) *QZone {
+	q.cookie = cookie
+	q.unpack()
 	// 设置为成功登录 TODO:可以做失效判断
-	qz.status = 0
-	return qz
+	q.status = 0
+	return q
 }
 
 // unpack 初始化信息,将成功扫码登录获取到的cookie解析
-func (qz *QZone) unpack() {
-	cookie := strings.ReplaceAll(qz.cookie, " ", "")
+func (q *QZone) unpack() {
+	cookie := strings.ReplaceAll(q.cookie, " ", "")
 	for _, v := range strings.Split(cookie, ";") {
 		name, val, f := strings.Cut(v, "=")
 		if f {
 			switch name {
 			case "uin":
-				qz.uin = val
+				q.uin = val
 			case "skey":
-				qz.skey = val
+				q.skey = val
 			case "p_skey":
-				qz.pskey = val
+				q.pskey = val
 			}
 		}
 	}
-	qz.gtk = genderGTK(qz.skey, 5381)
-	qz.gtk2 = genderGTK(qz.pskey, 5381)
-	t, err := strconv.ParseInt(strings.TrimPrefix(qz.uin, "o"), 10, 64)
+	q.gtk = genderGTK(q.skey, 5381)
+	q.gtk2 = genderGTK(q.pskey, 5381)
+	t, err := strconv.ParseInt(strings.TrimPrefix(q.uin, "o"), 10, 64)
 	if err != nil {
 		log.Fatal(err)
 	}
-	qz.qq = t
-	qz.cookie = cookie
+	q.qq = t
+	q.cookie = cookie
 
-	qz.Info.Cookie = cookie
-	qz.Info.QQ = strings.TrimPrefix(qz.uin, "o")
+	q.Info.Cookie = cookie
+	q.Info.QQ = strings.TrimPrefix(q.uin, "o")
+	q.Info.Gtk = q.gtk
+	q.Info.Gtk2 = q.gtk2
 	return
 }
 
 // GenerateQRCode 生成二维码，返回base64 二维码ID 用于查询扫码情况
-func (qz *QZone) GenerateQRCode() (string, error) {
+func (q *QZone) GenerateQRCode() (string, error) {
 	cookiesString := ""
-	qz.qrsig = ""
+	q.qrsig = ""
 	data, err := DialRequest(NewRequest(
 		WithUrl(ptqrshowURL),
 		WithClient(&http.Client{CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
@@ -136,7 +142,7 @@ func (qz *QZone) GenerateQRCode() (string, error) {
 			for _, v := range response.Cookies() {
 				cookiesString = cookiesString + v.String()
 				if v.Name == "qrsig" {
-					qz.qrsig = v.Value
+					q.qrsig = v.Value
 					break
 				}
 			}
@@ -146,23 +152,23 @@ func (qz *QZone) GenerateQRCode() (string, error) {
 		return "", er
 	}
 
-	if qz.qrsig == "" {
+	if q.qrsig == "" {
 		er := errors.New("空间登录二维码cookie获取错误:" + cookiesString)
 		return "", er
 	}
 	base64 := base64.StdEncoding.EncodeToString(data)
-	qz.qrtoken = genderGTK(qz.qrsig, 0)
+	q.qrtoken = genderGTK(q.qrsig, 0)
 	return base64, nil
 }
 
 // CheckQRCodeStatus 检查二维码状态 //0成功 1未扫描 2未确认 3已过期  -1系统错误
-func (qz *QZone) CheckQRCodeStatus() (int8, error) {
-	if qz.status == 0 {
+func (q *QZone) CheckQRCodeStatus() (int8, error) {
+	if q.status == 0 {
 		return 0, nil
 	}
-	qrtoken := qz.qrtoken
-	qrsign := qz.qrsig
-	qcookie := qz.cookie
+	qrtoken := q.qrtoken
+	qrsign := q.qrsig
+	qcookie := q.cookie
 	urls := fmt.Sprintf(ptqrloginURL, qrtoken)
 	data, err := DialRequest(NewRequest(
 		WithUrl(urls),
@@ -200,10 +206,10 @@ func (qz *QZone) CheckQRCodeStatus() (int8, error) {
 			return -1, er
 		}
 		qcookie += redirectCookie
-		qz.cookie = qcookie
+		q.cookie = qcookie
 		// 创建信息管理结构，携带登录回调cookie和重定向页面cookie
-		qz.unpack()
-		qz.status = 0
+		q.unpack()
+		q.status = 0
 		return 0, nil
 	}
 	return 0, nil

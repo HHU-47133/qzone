@@ -443,51 +443,9 @@ func (q *QZone) DoLike(tid string) (*models.LikeResp, error) {
 	return likeResp, nil
 }
 
-// GetQZoneHistory 获取QQ空间历史消息（限制本人）
-func (q *QZone) GetQZoneHistory() ([]*models.QZoneHistoryItem, error) {
-	qzhr := models.QZoneHistoryReq{
-		Uin:                q.qq,
-		Offset:             0,
-		Count:              10,
-		BeginTime:          "",
-		EndTime:            "",
-		Getappnotification: "1",
-		Getnotifi:          "1",
-		HasGetKey:          "0",
-		Useutf8:            "1",
-		Outputhtmlfeed:     "1",
-		Scope:              "1",
-		Set:                "0",
-		Format:             "json",
-		Gtk:                q.gtk,
-	}
-	headers := map[string]string{
-		"cookie":                    q.cookie,
-		"User-Agent":                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0",
-		"accept":                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-		"authority":                 "user.qzone.qq.com",
-		"pragma":                    "no-cache",
-		"cache-control":             "no-cache",
-		"accept-language":           "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
-		"sec-ch-ua":                 "\"Not A(Brand\";v=\"99\", \"Microsoft Edge\";v=\"121\", \"Chromium\";v=\"121\"",
-		"sec-ch-ua-mobile":          "?0",
-		"sec-ch-ua-platform":        "\"Windows\"",
-		"sec-fetch-dest":            "document",
-		"sec-fetch-mode":            "navigate",
-		"sec-fetch-site":            "none",
-		"sec-fetch-user":            "?1",
-		"upgrade-insecure-requests": "1",
-		"Content-Type":              "application/json; charset=utf-8",
-	}
-	url := getQZoneHistory + structToStr(qzhr)
-
-	data, err := DialRequest(NewRequest(WithUrl(url), WithHeader(headers)))
-	if err != nil {
-		er := errors.New("QQ空间历史数据请求错误:" + err.Error())
-		log.Println("QQ空间历史数据请求失败:" + er.Error())
-		return nil, er
-	}
-
+// getQZoneHistoryList 获取QQ空间历史消息（限制本人），offset和count分别表示每次请求的偏移量和数目
+func (q *QZone) getQZoneHistoryList(offset, count int64) ([]*models.QZoneHistoryItem, error) {
+	// 匿名函数列表，完成子操作
 	// decodeHtml 解码其中的html字符（例如\x3C）
 	decodeHtml := func(dataStr string) string {
 		// 1. 正则匹配 "\xHH" 的 16 进制编码部分
@@ -597,8 +555,15 @@ func (q *QZone) GetQZoneHistory() ([]*models.QZoneHistoryItem, error) {
 		return item, nil
 	}
 
+	// 请求历史消息数据
+	data, err := q.queryQZoneHistoryList(offset, count)
+	if err != nil {
+		er := errors.New("QQ空间历史数据请求错误:" + err.Error())
+		log.Println("QQ空间历史数据请求失败:" + er.Error())
+		return nil, er
+	}
+	// 解码并提取HTML数据
 	htmlSlice := extractHtml(decodeHtml(string(data)))
-
 	items := make([]*models.QZoneHistoryItem, len(htmlSlice))
 	// 分别对html切片中的每一条数据进行处理
 	for idx, html := range htmlSlice {
@@ -611,4 +576,121 @@ func (q *QZone) GetQZoneHistory() ([]*models.QZoneHistoryItem, error) {
 		items[idx] = item
 	}
 	return items, nil
+}
+
+func (q *QZone) queryQZoneHistoryList(offset, count int64) ([]byte, error) {
+	qzhr := models.QZoneHistoryReq{
+		Uin:                q.qq,
+		Offset:             offset,
+		Count:              count,
+		BeginTime:          "",
+		EndTime:            "",
+		Getappnotification: "1",
+		Getnotifi:          "1",
+		HasGetKey:          "0",
+		Useutf8:            "1",
+		Outputhtmlfeed:     "1",
+		Scope:              "1",
+		Set:                "0",
+		Format:             "json",
+		Gtk:                q.gtk,
+	}
+	headers := map[string]string{
+		"cookie":                    q.cookie,
+		"User-Agent":                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0",
+		"accept":                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+		"authority":                 "user.qzone.qq.com",
+		"pragma":                    "no-cache",
+		"cache-control":             "no-cache",
+		"accept-language":           "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+		"sec-ch-ua":                 "\"Not A(Brand\";v=\"99\", \"Microsoft Edge\";v=\"121\", \"Chromium\";v=\"121\"",
+		"sec-ch-ua-mobile":          "?0",
+		"sec-ch-ua-platform":        "\"Windows\"",
+		"sec-fetch-dest":            "document",
+		"sec-fetch-mode":            "navigate",
+		"sec-fetch-site":            "none",
+		"sec-fetch-user":            "?1",
+		"upgrade-insecure-requests": "1",
+		"Content-Type":              "application/json; charset=utf-8",
+	}
+	url_ := getQZoneHistory + structToStr(qzhr)
+
+	data, err := DialRequest(NewRequest(WithUrl(url_), WithHeader(headers)))
+	if err != nil {
+		return nil, err
+	}
+	// cookie过期或者发生了其他错误
+	ans := matchWithRegexp(string(data), `"code":(.*?),`, true)
+	if ans != nil {
+		code, _ := strconv.Atoi(ans[0])
+		if code == -3000 {
+			er := errors.New("请求历史消息数据错误: cookie失效或其他错误")
+			log.Println("请求历史消息数据失败:", er.Error())
+			return nil, er
+		}
+	}
+
+	return data, nil
+}
+
+// GetQZoneHistoryList 获取本人QQ空间的所有历史消息
+func (q *QZone) GetQZoneHistoryList() ([]*models.QZoneHistoryItem, error) {
+	// 0. 函数中使用到的匿名函数
+	// getTotal 获取历史消息总数
+	getTotal := func() (int64, error) {
+		var (
+			low, high int64 = 0, 20000
+			total     int64 = 0
+			count     int64 = 100
+		)
+
+		for low <= high {
+			mid := (low + high) >> 1
+			// 1. 请求数据
+			data, err := q.queryQZoneHistoryList(mid*count, count)
+			if err != nil {
+				er := errors.New("QQ空间历史消息获取错误:" + err.Error())
+				log.Println("QQ空间历史消息获取失败:", er.Error())
+				return total, er
+			}
+			// 2. 解析数据
+			ans := matchWithRegexp(string(data), `total_number:(.*?),`, true)
+			if ans == nil {
+				er := errors.New("QQ空间历史消息解析错误")
+				log.Println("QQ空间历史消息解析失败:", er.Error())
+				return total, er
+			}
+			num, _ := strconv.ParseInt(ans[0], 10, 64)
+			if num <= 0 {
+				high = mid - 1
+			} else { // num > 0
+				low = mid + 1
+				total = mid*count + num
+			}
+
+			time.Sleep(2 * time.Second)
+		}
+
+		return total, nil
+	}
+
+	// 1. getTotal
+	total, err := getTotal()
+	if err != nil {
+		return nil, err
+	}
+	// 2. 每次请求10条，并拼接结果
+	totalItems := make([]*models.QZoneHistoryItem, total)
+	for i := 0; i <= int(total)/10; i++ {
+		offset := i * 10
+		items, err := q.getQZoneHistoryList(int64(offset), 10)
+		if err != nil {
+			return nil, err
+		}
+		for idx, item := range items {
+			totalItems[offset+idx] = item
+		}
+	}
+
+	return totalItems, nil
 }

@@ -1,11 +1,12 @@
 package examples
 
 import (
+	"encoding/base64"
 	"errors"
-	"fmt"
 	"github.com/HHU-47133/qzone"
 	"github.com/PuerkitoBio/goquery"
 	"net/url"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -119,12 +120,14 @@ func TestGetHistoryData(t *testing.T) {
 
 }
 
-// TODO 完成getTotal，获取全部历史数据
-func getTotal() int {
-	l, r := 0, 100000
-	var m int
+// TODO 完成TestGetTotal，获取全部历史数据
+func TestGetTotal(t *testing.T) {
+	//login(t)
+	//t.Log("cookie=", qm.Info.Cookie)
+	qm = new(qzone.QZone)
+	qm.WithCookie("pt2gguin=o0168880679;uin=o0168880679;skey=@wnAhLSn8f;superuin=o0168880679;supertoken=707819007;superkey=sppGD*9rWyWwfYssBl-LVe*s3EKovjLOSfbGrYtWJl0_;pt_recent_uins=220b2340fb277d07f7e4050c0a403e45f22dfb49f0db81ad62a0693ad04603d3e2a736682ccbe429660864dbc73c0ae4ec2d9c6617828c01;RK=SJlcxow2OC;ptnick_168880679=4a4c;ptcz=c232bd9097ded791b9f452f86ee426e1b9d6d8589ab31a1c7b99611f4ffbc068;uin=o0168880679;skey=@wnAhLSn8f;pt2gguin=o0168880679;p_uin=o0168880679;pt4_token=-WIkUxsuA7zF5wZnGUqULzOEWukmt1-f-9JYakerKSY_;p_skey=DujVvqO4JnMwHhDEGEBGcdltGxutrACfDCC2JLd14XI_;")
 	baseUrl := "https://user.qzone.qq.com/proxy/domain/ic2.qzone.qq.com/cgi-bin/feeds/feeds2_html_pav_all?"
-	header := map[string]string{
+	headers := map[string]string{
 		"cookie":                    qm.Info.Cookie,
 		"User-Agent":                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0",
 		"accept":                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -142,23 +145,39 @@ func getTotal() int {
 		"upgrade-insecure-requests": "1",
 		"Content-Type":              "application/json; charset=utf-8",
 	}
-	for l <= r {
-		m = (l + r) >> 1
-		fmt.Printf("l=%v,r=%v\n", l, r)
-		url_ := baseUrl + getParams(m, 100)
-		data, err := qzone.DialRequest(qzone.NewRequest(qzone.WithUrl(url_), qzone.WithHeader(header)))
-		if err != nil {
-			fmt.Println("get response failed, err:", err)
-			return -1
-		}
-		if strings.Contains(string(data), "li") {
-			l = m + 1
-		} else {
-			r = m - 1
-		}
-	}
 
-	return m
+	low, high := 0, 20000
+	total, count := 0, 100
+
+	for low <= high {
+		mid := (low + high) >> 1
+		// 1. 请求数据
+		urls := baseUrl + getParams(mid*count, count)
+		data, err := qzone.DialRequest(qzone.NewRequest(qzone.WithUrl(urls), qzone.WithHeader(headers)))
+		t.Logf("[low=%v,high=%v,offset=%v]", low, high, mid*count)
+		t.Log("data=", string(data))
+		if err != nil {
+			t.Logf("[low=%v,high=%v,offset=%v] request url failed, err:%v\n", low, high, mid*count, err)
+			return
+		}
+		// 2. 解析数据
+		ans := matchWithRegexp(string(data), `total_number:(.*?),`, true)
+		if len(ans) == 0 {
+			t.Logf("[low=%v,high=%v,offset=%v] parse data failed, err:%v\n", low, high, mid*count, err)
+			return
+		}
+		num, _ := strconv.Atoi(ans[0])
+		if num <= 0 {
+			high = mid - 1
+		} else { // num > 0
+			low = mid + 1
+			total = mid*count + num
+			t.Logf("[total=%v]", total)
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+	t.Log("final total=", total)
 }
 
 type qzoneHistoryItem struct {
@@ -258,4 +277,65 @@ func matchWithRegexp(data, pattern string, extract bool) []string {
 	}
 
 	return res
+}
+
+func TestMatch(t *testing.T) {
+	ans := matchWithRegexp(`{
+	"code":-3000,
+	"subcode":-4001,
+	"message":"need login",
+	"notice":0,
+	"time":1732810983,
+	"tips":"0103-87"
+}
+`, `"code":(.*?),`, true)
+	t.Logf("%#v", ans)
+}
+
+func login(t *testing.T) {
+	// 创建QZone对象, 使用扫码登录
+	qm = qzone.NewQZone()
+	b64s, err := qm.GenerateQRCode()
+	if err != nil {
+		t.Fatal("扫码登录获取二维码失败:", err)
+	}
+
+	ddd, err := base64.StdEncoding.DecodeString(b64s)
+	if err != nil {
+		t.Fatal("扫码登录base64解码失败:", err)
+	}
+
+	err = os.WriteFile("./qrcode.png", ddd, 0666)
+	if err != nil {
+		t.Fatal("扫码登录写入二维码到文件失败:", err)
+	}
+
+	for {
+		//0成功 1未扫描 2未确认 3已过期  -1系统错误
+		status, err := qm.CheckQRCodeStatus()
+		if err != nil {
+			t.Fatal("扫码登录检测二维码状态失败:", err)
+		}
+		if status == 0 {
+			break
+		}
+		t.Log("登录状态:", status)
+		time.Sleep(2 * time.Second)
+	}
+}
+
+func TestGetQZoneHistoryList(t *testing.T) {
+	login(t)
+	t.Log("cookie=", qm.Info.Cookie)
+	//qm = qzone.NewQZone()
+	//qm.WithCookie("")
+	list, err := qm.GetQZoneHistoryList()
+	if err != nil {
+		t.Log("test GetQZoneHistoryList failed, err:", err)
+		return
+	}
+	t.Logf("len=%v", len(list))
+	for _, item := range list {
+		t.Logf("%#v", item)
+	}
 }

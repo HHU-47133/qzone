@@ -135,20 +135,20 @@ type FriendInfoDetailResp struct {
 
 // QZoneHistoryReq QQ空间历史消息请求结构体
 type QZoneHistoryReq struct {
-	Uin                int64 // QQ号
-	Offset             int64 // 偏移量
-	Count              int64 // 请求数目
-	BeginTime          string
-	EndTime            string
-	Getappnotification string
-	Getnotifi          string
-	HasGetKey          string
-	Useutf8            string
-	Outputhtmlfeed     string
-	Scope              string
-	Set                string
-	Format             string
-	Gtk                string
+	Uin                int64  `json:"uin"`    // QQ号
+	Offset             int64  `json:"offset"` // 偏移量
+	Count              int64  `json:"count"`  // 请求数目
+	BeginTime          string `json:"begin_time"`
+	EndTime            string `json:"end_time"`
+	Getappnotification string `json:"getappnotification"`
+	Getnotifi          string `json:"getnotifi"`
+	HasGetKey          string `json:"has_get_key"`
+	Useutf8            string `json:"useutf8"`
+	Outputhtmlfeed     string `json:"outputhtmlfeed"`
+	Scope              string `json:"scope"`
+	Set                string `json:"set"`
+	Format             string `json:"format"`
+	Gtk                string `json:"g_tk"`
 }
 
 // QZoneHistoryItem QQ空间历史消息返回结构体

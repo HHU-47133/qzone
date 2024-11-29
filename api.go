@@ -639,7 +639,7 @@ func (q *QZone) GetQZoneHistoryList() ([]*models.QZoneHistoryItem, error) {
 	// getTotal 获取历史消息总数
 	getTotal := func() (int64, error) {
 		var (
-			low, high int64 = 0, 20000
+			low, high int64 = 0, math.MaxInt / 2
 			total     int64 = 0
 			count     int64 = 100
 		)

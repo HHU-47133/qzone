@@ -681,16 +681,21 @@ func (q *QZone) GetQZoneHistoryList() ([]*models.QZoneHistoryItem, error) {
 	}
 	// 2. 每次请求10条，并拼接结果
 	totalItems := make([]*models.QZoneHistoryItem, total)
+
+	idx := 0
 	for i := 0; i <= int(total)/10; i++ {
 		offset := i * 10
 		items, err := q.getQZoneHistoryList(int64(offset), 10)
 		if err != nil {
 			return nil, err
 		}
-		for idx, item := range items {
-			totalItems[offset+idx] = item
+		for _, item := range items {
+			if item != nil {
+				totalItems[idx] = item
+				idx++
+			}
 		}
 	}
 
-	return totalItems, nil
+	return totalItems[:idx], nil
 }
